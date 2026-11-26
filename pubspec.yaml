@@ -1,0 +1,26 @@
+name: gerenciamento_obrigacoes_app
+description: Frontend Flutter do Sistema de Gerenciamento de Obrigações
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_riverpod: ^2.6.1
+  dio: ^5.7.0
+  intl: ^0.19.0
+  file_picker: ^8.1.4
+  path_provider: ^2.1.5
+  open_filex: ^4.6.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
