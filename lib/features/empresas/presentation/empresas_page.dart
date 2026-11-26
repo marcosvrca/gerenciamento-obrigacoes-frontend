@@ -4,6 +4,8 @@ import 'package:gerenciamento_obrigacoes_app/core/network/api_client.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_spacing.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/empty_state.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/entity_card.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/list_pagination.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/list_skeleton.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/page_header.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/status_badge.dart';
 import 'package:gerenciamento_obrigacoes_app/features/empresas/data/empresa_repository.dart';
@@ -23,6 +25,14 @@ class EmpresasPage extends ConsumerStatefulWidget {
 
 class _EmpresasPageState extends ConsumerState<EmpresasPage> {
   String? _filtro;
+  int _page = 0;
+
+  void _setFiltro(String? value) {
+    setState(() {
+      _filtro = value;
+      _page = 0;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,8 +53,9 @@ class _EmpresasPageState extends ConsumerState<EmpresasPage> {
               subtitle: 'Cadastro de clientes do escritório.',
             ),
             FilterChipsBar(
+              label: 'Situação',
               selected: _filtro,
-              onSelected: (value) => setState(() => _filtro = value),
+              onSelected: _setFiltro,
               options: const [
                 FilterOption(label: 'Todas'),
                 FilterOption(label: 'Ativas', value: 'ATIVO'),
@@ -61,37 +72,27 @@ class _EmpresasPageState extends ConsumerState<EmpresasPage> {
                       subtitle: 'Adicione a primeira empresa para começar.',
                     );
                   }
-                  return RefreshIndicator(
+                  return PaginatedEntityList<Empresa>(
+                    items: empresas,
+                    page: _page,
+                    onPageChanged: (page) => setState(() => _page = page),
                     onRefresh: () async =>
                         ref.invalidate(empresasProvider(_filtro)),
-                    child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.page,
-                        0,
-                        AppSpacing.page,
-                        96,
-                      ),
-                      itemCount: empresas.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: AppSpacing.md),
-                      itemBuilder: (context, index) {
-                        final empresa = empresas[index];
-                        return EntityCard(
-                          leading: AvatarMark(label: empresa.razaoSocial),
-                          title: empresa.razaoSocial,
-                          subtitle: '${empresa.cnpj}  ·  ${empresa.email}',
-                          trailing: SituacaoBadge(
-                            ativa: empresa.ativa,
-                            label: empresa.situacao,
-                          ),
-                          onTap: () => _abrirFormulario(empresa: empresa),
-                        );
-                      },
-                    ),
+                    itemBuilder: (context, empresa) {
+                      return EntityCard(
+                        leading: AvatarMark(label: empresa.razaoSocial),
+                        title: empresa.razaoSocial,
+                        subtitle: '${empresa.cnpj}  ·  ${empresa.email}',
+                        trailing: SituacaoBadge(
+                          ativa: empresa.ativa,
+                          label: empresa.situacao,
+                        ),
+                        onTap: () => _abrirFormulario(empresa: empresa),
+                      );
+                    },
                   );
                 },
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
+                loading: () => const ListSkeleton(),
                 error: (error, _) => ErrorState(
                   message: extractErrorMessage(error),
                   onRetry: () => ref.invalidate(empresasProvider(_filtro)),

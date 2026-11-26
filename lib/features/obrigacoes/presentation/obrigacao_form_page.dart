@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gerenciamento_obrigacoes_app/core/network/api_client.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_palette.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_spacing.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/list_skeleton.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/page_header.dart';
 import 'package:gerenciamento_obrigacoes_app/features/empresas/data/empresa_repository.dart';
 import 'package:gerenciamento_obrigacoes_app/features/empresas/models/empresa.dart';
@@ -98,7 +99,7 @@ class _ObrigacaoFormPageState extends ConsumerState<ObrigacaoFormPage> {
         title: Text(isNova ? 'Nova obrigação' : 'Editar obrigação'),
       ),
       body: _carregando
-          ? const Center(child: CircularProgressIndicator())
+          ? const FormSkeleton()
           : ContentWidth(
               child: Form(
                 key: _formKey,

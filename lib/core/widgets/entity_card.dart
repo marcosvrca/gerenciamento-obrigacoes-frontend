@@ -32,9 +32,12 @@ class EntityCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.md + 2,
+          ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               if (leading != null) ...[
                 leading!,
@@ -48,10 +51,18 @@ class EntityCard extends StatelessWidget {
                       title,
                       style: textTheme.titleMedium?.copyWith(
                         color: palette.ink,
+                        fontWeight: FontWeight.w600,
+                        height: 1.25,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
-                    Text(subtitle, style: textTheme.bodyMedium),
+                    Text(
+                      subtitle,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: palette.muted,
+                        height: 1.35,
+                      ),
+                    ),
                   ],
                 ),
               ),

@@ -4,10 +4,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gerenciamento_obrigacoes_app/core/navigation/app_page_route.dart';
 import 'package:gerenciamento_obrigacoes_app/core/network/api_client.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_palette.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_spacing.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/empty_state.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/list_skeleton.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/page_header.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/status_badge.dart';
 import 'package:gerenciamento_obrigacoes_app/features/anexos/data/anexo_repository.dart';
@@ -57,9 +59,7 @@ class ObrigacaoDetailPage extends ConsumerWidget {
                 return;
               }
               final salvou = await Navigator.of(context).push<bool>(
-                MaterialPageRoute(
-                  builder: (_) => ObrigacaoFormPage(obrigacao: atual),
-                ),
+                AppPageRoute(page: ObrigacaoFormPage(obrigacao: atual)),
               );
               if (salvou == true) {
                 ref.invalidate(obrigacaoDetailProvider(id));
@@ -217,9 +217,9 @@ class ObrigacaoDetailPage extends ConsumerWidget {
                             .toList(),
                       );
                     },
-                    loading: () => const Padding(
-                      padding: EdgeInsets.all(AppSpacing.lg),
-                      child: Center(child: CircularProgressIndicator()),
+                    loading: () => const SizedBox(
+                      height: 160,
+                      child: ListSkeleton(itemCount: 2),
                     ),
                     error: (e, _) => Text(extractErrorMessage(e)),
                   ),
@@ -227,7 +227,7 @@ class ObrigacaoDetailPage extends ConsumerWidget {
               ),
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const DetailSkeleton(),
           error: (e, _) => ErrorState(
             message: extractErrorMessage(e),
             onRetry: () => ref.invalidate(obrigacaoDetailProvider(id)),

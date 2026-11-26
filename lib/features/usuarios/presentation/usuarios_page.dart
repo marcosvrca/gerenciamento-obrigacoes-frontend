@@ -4,6 +4,8 @@ import 'package:gerenciamento_obrigacoes_app/core/network/api_client.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_spacing.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/empty_state.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/entity_card.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/list_pagination.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/list_skeleton.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/page_header.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/status_badge.dart';
 import 'package:gerenciamento_obrigacoes_app/features/usuarios/data/usuario_repository.dart';
@@ -23,6 +25,14 @@ class UsuariosPage extends ConsumerStatefulWidget {
 
 class _UsuariosPageState extends ConsumerState<UsuariosPage> {
   String? _filtro;
+  int _page = 0;
+
+  void _setFiltro(String? value) {
+    setState(() {
+      _filtro = value;
+      _page = 0;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,8 +53,9 @@ class _UsuariosPageState extends ConsumerState<UsuariosPage> {
               subtitle: 'Responsáveis pelas obrigações do escritório.',
             ),
             FilterChipsBar(
+              label: 'Situação',
               selected: _filtro,
-              onSelected: (value) => setState(() => _filtro = value),
+              onSelected: _setFiltro,
               options: const [
                 FilterOption(label: 'Todos'),
                 FilterOption(label: 'Ativos', value: 'ATIVO'),
@@ -62,37 +73,27 @@ class _UsuariosPageState extends ConsumerState<UsuariosPage> {
                           'Cadastre responsáveis para atribuir obrigações.',
                     );
                   }
-                  return RefreshIndicator(
+                  return PaginatedEntityList<Usuario>(
+                    items: usuarios,
+                    page: _page,
+                    onPageChanged: (page) => setState(() => _page = page),
                     onRefresh: () async =>
                         ref.invalidate(usuariosProvider(_filtro)),
-                    child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.page,
-                        0,
-                        AppSpacing.page,
-                        96,
-                      ),
-                      itemCount: usuarios.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: AppSpacing.md),
-                      itemBuilder: (context, index) {
-                        final usuario = usuarios[index];
-                        return EntityCard(
-                          leading: AvatarMark(label: usuario.nome),
-                          title: usuario.nome,
-                          subtitle: usuario.email,
-                          trailing: SituacaoBadge(
-                            ativa: usuario.ativo,
-                            label: usuario.situacao,
-                          ),
-                          onTap: () => _abrirFormulario(usuario: usuario),
-                        );
-                      },
-                    ),
+                    itemBuilder: (context, usuario) {
+                      return EntityCard(
+                        leading: AvatarMark(label: usuario.nome),
+                        title: usuario.nome,
+                        subtitle: usuario.email,
+                        trailing: SituacaoBadge(
+                          ativa: usuario.ativo,
+                          label: usuario.situacao,
+                        ),
+                        onTap: () => _abrirFormulario(usuario: usuario),
+                      );
+                    },
                   );
                 },
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
+                loading: () => const ListSkeleton(),
                 error: (error, _) => ErrorState(
                   message: extractErrorMessage(error),
                   onRetry: () => ref.invalidate(usuariosProvider(_filtro)),
