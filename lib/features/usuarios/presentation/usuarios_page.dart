@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gerenciamento_obrigacoes_app/core/network/api_client.dart';
+import 'package:gerenciamento_obrigacoes_app/core/theme/app_spacing.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/empty_state.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/entity_card.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/page_header.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/status_badge.dart';
 import 'package:gerenciamento_obrigacoes_app/features/usuarios/data/usuario_repository.dart';
 import 'package:gerenciamento_obrigacoes_app/features/usuarios/models/usuario.dart';
 
@@ -24,61 +29,78 @@ class _UsuariosPageState extends ConsumerState<UsuariosPage> {
     final usuariosAsync = ref.watch(usuariosProvider(_filtro));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Usuários'),
-        actions: [
-          DropdownButtonHideUnderline(
-            child: DropdownButton<String?>(
-              value: _filtro,
-              hint: const Text('Situação', style: TextStyle(color: Colors.white)),
-              dropdownColor: Theme.of(context).colorScheme.surface,
-              items: const [
-                DropdownMenuItem(value: null, child: Text('Todos')),
-                DropdownMenuItem(value: 'ATIVO', child: Text('Ativos')),
-                DropdownMenuItem(value: 'INATIVO', child: Text('Inativos')),
-              ],
-              onChanged: (value) => setState(() => _filtro = value),
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _abrirFormulario(),
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Novo usuário'),
       ),
-      body: usuariosAsync.when(
-        data: (usuarios) {
-          if (usuarios.isEmpty) {
-            return const Center(child: Text('Nenhum usuário cadastrado.'));
-          }
-          return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(usuariosProvider(_filtro)),
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: usuarios.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (context, index) {
-                final usuario = usuarios[index];
-                return Card(
-                  child: ListTile(
-                    title: Text(usuario.nome),
-                    subtitle: Text(usuario.email),
-                    trailing: Chip(
-                      label: Text(usuario.situacao),
-                      backgroundColor: usuario.ativo
-                          ? Colors.green.shade50
-                          : Colors.grey.shade200,
-                    ),
-                    onTap: () => _abrirFormulario(usuario: usuario),
-                  ),
-                );
-              },
+      body: ContentWidth(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const PageHeader(
+              title: 'Usuários',
+              subtitle: 'Responsáveis pelas obrigações do escritório.',
             ),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text(extractErrorMessage(error))),
+            FilterChipsBar(
+              selected: _filtro,
+              onSelected: (value) => setState(() => _filtro = value),
+              options: const [
+                FilterOption(label: 'Todos'),
+                FilterOption(label: 'Ativos', value: 'ATIVO'),
+                FilterOption(label: 'Inativos', value: 'INATIVO'),
+              ],
+            ),
+            Expanded(
+              child: usuariosAsync.when(
+                data: (usuarios) {
+                  if (usuarios.isEmpty) {
+                    return const EmptyState(
+                      icon: Icons.group_outlined,
+                      title: 'Nenhum usuário cadastrado',
+                      subtitle:
+                          'Cadastre responsáveis para atribuir obrigações.',
+                    );
+                  }
+                  return RefreshIndicator(
+                    onRefresh: () async =>
+                        ref.invalidate(usuariosProvider(_filtro)),
+                    child: ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.page,
+                        0,
+                        AppSpacing.page,
+                        96,
+                      ),
+                      itemCount: usuarios.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: AppSpacing.md),
+                      itemBuilder: (context, index) {
+                        final usuario = usuarios[index];
+                        return EntityCard(
+                          leading: AvatarMark(label: usuario.nome),
+                          title: usuario.nome,
+                          subtitle: usuario.email,
+                          trailing: SituacaoBadge(
+                            ativa: usuario.ativo,
+                            label: usuario.situacao,
+                          ),
+                          onTap: () => _abrirFormulario(usuario: usuario),
+                        );
+                      },
+                    ),
+                  );
+                },
+                loading: () =>
+                    const Center(child: CircularProgressIndicator()),
+                error: (error, _) => ErrorState(
+                  message: extractErrorMessage(error),
+                  onRetry: () => ref.invalidate(usuariosProvider(_filtro)),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -142,16 +164,16 @@ class _UsuarioFormDialogState extends ConsumerState<_UsuarioFormDialog> {
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Obrigatório' : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _email,
                 decoration: const InputDecoration(labelText: 'E-mail'),
                 validator: (v) =>
                     v == null || !v.contains('@') ? 'E-mail inválido' : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               DropdownButtonFormField<String>(
-                value: _situacao,
+                initialValue: _situacao,
                 decoration: const InputDecoration(labelText: 'Situação'),
                 items: const [
                   DropdownMenuItem(value: 'ATIVO', child: Text('Ativo')),

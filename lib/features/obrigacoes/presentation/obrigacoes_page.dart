@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gerenciamento_obrigacoes_app/core/network/api_client.dart';
+import 'package:gerenciamento_obrigacoes_app/core/theme/app_spacing.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/empty_state.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/entity_card.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/page_header.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/status_badge.dart';
 import 'package:gerenciamento_obrigacoes_app/features/obrigacoes/data/obrigacao_repository.dart';
 import 'package:gerenciamento_obrigacoes_app/features/obrigacoes/models/obrigacao.dart';
 import 'package:gerenciamento_obrigacoes_app/features/obrigacoes/presentation/obrigacao_detail_page.dart';
@@ -26,28 +31,7 @@ class _ObrigacoesPageState extends ConsumerState<ObrigacoesPage> {
     final obrigacoesAsync = ref.watch(obrigacoesProvider(_status));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Obrigações'),
-        actions: [
-          DropdownButtonHideUnderline(
-            child: DropdownButton<String?>(
-              value: _status,
-              hint: const Text('Status', style: TextStyle(color: Colors.white)),
-              dropdownColor: Theme.of(context).colorScheme.surface,
-              items: const [
-                DropdownMenuItem(value: null, child: Text('Todos')),
-                DropdownMenuItem(value: 'PENDENTE', child: Text('Pendente')),
-                DropdownMenuItem(
-                    value: 'EM_ANDAMENTO', child: Text('Em andamento')),
-                DropdownMenuItem(value: 'CONCLUIDA', child: Text('Concluída')),
-              ],
-              onChanged: (value) => setState(() => _status = value),
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final salvou = await Navigator.of(context).push<bool>(
             MaterialPageRoute(builder: (_) => const ObrigacaoFormPage()),
@@ -56,46 +40,88 @@ class _ObrigacoesPageState extends ConsumerState<ObrigacoesPage> {
             ref.invalidate(obrigacoesProvider(_status));
           }
         },
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Nova obrigação'),
       ),
-      body: obrigacoesAsync.when(
-        data: (obrigacoes) {
-          if (obrigacoes.isEmpty) {
-            return const Center(child: Text('Nenhuma obrigação cadastrada.'));
-          }
-          return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(obrigacoesProvider(_status)),
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: obrigacoes.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (context, index) {
-                final item = obrigacoes[index];
-                return Card(
-                  child: ListTile(
-                    title: Text(item.titulo),
-                    subtitle: Text(
-                      '${item.empresaRazaoSocial}\n'
-                      'Responsável: ${item.usuarioNome} • Prazo: ${item.prazo}',
-                    ),
-                    isThreeLine: true,
-                    trailing: Chip(label: Text(item.statusLabel)),
-                    onTap: () async {
-                      await Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => ObrigacaoDetailPage(id: item.id),
-                        ),
-                      );
-                      ref.invalidate(obrigacoesProvider(_status));
-                    },
-                  ),
-                );
-              },
+      body: ContentWidth(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const PageHeader(
+              title: 'Obrigações',
+              subtitle: 'Acompanhe prazos, responsáveis e status das demandas.',
             ),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text(extractErrorMessage(error))),
+            FilterChipsBar(
+              selected: _status,
+              onSelected: (value) => setState(() => _status = value),
+              options: const [
+                FilterOption(label: 'Todas'),
+                FilterOption(label: 'Pendentes', value: 'PENDENTE'),
+                FilterOption(label: 'Em andamento', value: 'EM_ANDAMENTO'),
+                FilterOption(label: 'Concluídas', value: 'CONCLUIDA'),
+              ],
+            ),
+            Expanded(
+              child: obrigacoesAsync.when(
+                data: (obrigacoes) {
+                  if (obrigacoes.isEmpty) {
+                    return const EmptyState(
+                      icon: Icons.assignment_outlined,
+                      title: 'Nenhuma obrigação neste filtro',
+                      subtitle:
+                          'Crie uma nova obrigação ou ajuste o status selecionado.',
+                    );
+                  }
+                  return RefreshIndicator(
+                    onRefresh: () async =>
+                        ref.invalidate(obrigacoesProvider(_status)),
+                    child: ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.page,
+                        0,
+                        AppSpacing.page,
+                        96,
+                      ),
+                      itemCount: obrigacoes.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: AppSpacing.md),
+                      itemBuilder: (context, index) {
+                        final item = obrigacoes[index];
+                        return EntityCard(
+                          leading: const AvatarMark(
+                            label: 'O',
+                            icon: Icons.assignment_outlined,
+                          ),
+                          title: item.titulo,
+                          subtitle:
+                              '${item.empresaRazaoSocial}\n'
+                              'Responsável: ${item.usuarioNome}  ·  Prazo: ${item.prazo}',
+                          trailing: StatusBadge(status: item.status),
+                          onTap: () async {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    ObrigacaoDetailPage(id: item.id),
+                              ),
+                            );
+                            ref.invalidate(obrigacoesProvider(_status));
+                          },
+                        );
+                      },
+                    ),
+                  );
+                },
+                loading: () =>
+                    const Center(child: CircularProgressIndicator()),
+                error: (error, _) => ErrorState(
+                  message: extractErrorMessage(error),
+                  onRetry: () =>
+                      ref.invalidate(obrigacoesProvider(_status)),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

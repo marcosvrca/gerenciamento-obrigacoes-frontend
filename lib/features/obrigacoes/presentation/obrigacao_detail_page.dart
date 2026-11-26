@@ -5,6 +5,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gerenciamento_obrigacoes_app/core/network/api_client.dart';
+import 'package:gerenciamento_obrigacoes_app/core/theme/app_palette.dart';
+import 'package:gerenciamento_obrigacoes_app/core/theme/app_spacing.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/empty_state.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/page_header.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/status_badge.dart';
 import 'package:gerenciamento_obrigacoes_app/features/anexos/data/anexo_repository.dart';
 import 'package:gerenciamento_obrigacoes_app/features/anexos/models/anexo.dart';
 import 'package:gerenciamento_obrigacoes_app/features/obrigacoes/data/obrigacao_repository.dart';
@@ -35,16 +40,18 @@ class ObrigacaoDetailPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detalhe da obrigação'),
+        title: const Text('Detalhe'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit),
+            tooltip: 'Editar',
+            icon: const Icon(Icons.edit_outlined),
             onPressed: () async {
               final atual = obrigacaoAsync.valueOrNull;
               if (atual == null || atual.status == 'CONCLUIDA') {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Obrigações concluídas não podem ser editadas.'),
+                    content:
+                        Text('Obrigações concluídas não podem ser editadas.'),
                   ),
                 );
                 return;
@@ -61,83 +68,171 @@ class ObrigacaoDetailPage extends ConsumerWidget {
           ),
         ],
       ),
-      body: obrigacaoAsync.when(
-        data: (obrigacao) {
-          return RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(obrigacaoDetailProvider(id));
-              ref.invalidate(anexosProvider(id));
-            },
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Text(obrigacao.titulo, style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 8),
-                Text(obrigacao.descricao?.isNotEmpty == true
-                    ? obrigacao.descricao!
-                    : 'Sem descrição'),
-                const SizedBox(height: 16),
-                _InfoRow(label: 'Status', value: obrigacao.statusLabel),
-                _InfoRow(label: 'Prazo', value: obrigacao.prazo),
-                _InfoRow(label: 'Empresa', value: obrigacao.empresaRazaoSocial),
-                _InfoRow(label: 'Responsável', value: obrigacao.usuarioNome),
-                const SizedBox(height: 16),
-                if (obrigacao.proximoStatus != null)
-                  FilledButton.icon(
-                    onPressed: () => _avancarStatus(context, ref, obrigacao),
-                    icon: const Icon(Icons.arrow_forward),
-                    label: Text('Avançar para ${_label(obrigacao.proximoStatus!)}'),
+      body: ContentWidth(
+        child: obrigacaoAsync.when(
+          data: (obrigacao) {
+            return RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(obrigacaoDetailProvider(id));
+                ref.invalidate(anexosProvider(id));
+              },
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.page,
+                  AppSpacing.sm,
+                  AppSpacing.page,
+                  AppSpacing.xxl,
+                ),
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          obrigacao.titulo,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      StatusBadge(status: obrigacao.status),
+                    ],
                   ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Text('Anexos', style: Theme.of(context).textTheme.titleMedium),
-                    const Spacer(),
-                    TextButton.icon(
-                      onPressed: () => _upload(context, ref),
-                      icon: const Icon(Icons.upload_file),
-                      label: const Text('Enviar'),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    obrigacao.descricao?.isNotEmpty == true
+                        ? obrigacao.descricao!
+                        : 'Sem descrição',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  Builder(
+                    builder: (context) {
+                      final palette = AppPalette.of(context);
+                      return Container(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        decoration: BoxDecoration(
+                          color: palette.surface,
+                          borderRadius: BorderRadius.circular(AppRadii.md),
+                          border: Border.all(
+                            color: palette.border,
+                            width: palette.borderWidth,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            _InfoRow(label: 'Prazo', value: obrigacao.prazo),
+                            const Divider(height: AppSpacing.xl),
+                            _InfoRow(
+                              label: 'Empresa',
+                              value: obrigacao.empresaRazaoSocial,
+                            ),
+                            const Divider(height: AppSpacing.xl),
+                            _InfoRow(
+                              label: 'Responsável',
+                              value: obrigacao.usuarioNome,
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  if (obrigacao.proximoStatus != null) ...[
+                    const SizedBox(height: AppSpacing.xl),
+                    FilledButton.icon(
+                      onPressed: () => _avancarStatus(context, ref, obrigacao),
+                      icon: const Icon(Icons.arrow_forward_rounded),
+                      label: Text(
+                        'Avançar para ${_label(obrigacao.proximoStatus!)}',
+                      ),
                     ),
                   ],
-                ),
-                anexosAsync.when(
-                  data: (anexos) {
-                    if (anexos.isEmpty) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Text('Nenhum anexo.'),
-                      );
-                    }
-                    return Column(
-                      children: anexos
-                          .map(
-                            (anexo) => Card(
-                              child: ListTile(
-                                leading: const Icon(Icons.attach_file),
-                                title: Text(anexo.nomeOriginal),
-                                subtitle: Text('${anexo.tamanhoBytes} bytes'),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.download),
-                                  onPressed: () => _download(context, ref, anexo),
+                  const SizedBox(height: AppSpacing.xxl),
+                  Row(
+                    children: [
+                      Text(
+                        'Anexos',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const Spacer(),
+                      OutlinedButton.icon(
+                        onPressed: () => _upload(context, ref),
+                        icon: const Icon(Icons.upload_file_outlined),
+                        label: const Text('Enviar'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  anexosAsync.when(
+                    data: (anexos) {
+                      if (anexos.isEmpty) {
+                        return const EmptyState(
+                          icon: Icons.attach_file_outlined,
+                          title: 'Nenhum anexo',
+                          subtitle: 'Envie documentos relacionados a esta obrigação.',
+                        );
+                      }
+                      return Column(
+                        children: anexos
+                            .map(
+                              (anexo) => Padding(
+                                padding:
+                                    const EdgeInsets.only(bottom: AppSpacing.sm),
+                                child: Builder(
+                                  builder: (context) {
+                                    final palette = AppPalette.of(context);
+                                    final scheme =
+                                        Theme.of(context).colorScheme;
+                                    return Material(
+                                  color: palette.surface,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(AppRadii.md),
+                                    side: BorderSide(
+                                      color: palette.border,
+                                      width: palette.borderWidth,
+                                    ),
+                                  ),
+                                  child: ListTile(
+                                    leading: Icon(
+                                      Icons.attach_file_rounded,
+                                      color: scheme.primary,
+                                    ),
+                                    title: Text(anexo.nomeOriginal),
+                                    subtitle:
+                                        Text('${anexo.tamanhoBytes} bytes'),
+                                    trailing: IconButton(
+                                      tooltip: 'Baixar',
+                                      icon: const Icon(
+                                        Icons.download_outlined,
+                                      ),
+                                      onPressed: () =>
+                                          _download(context, ref, anexo),
+                                    ),
+                                  ),
+                                    );
+                                  },
                                 ),
                               ),
-                            ),
-                          )
-                          .toList(),
-                    );
-                  },
-                  loading: () => const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: CircularProgressIndicator(),
+                            )
+                            .toList(),
+                      );
+                    },
+                    loading: () => const Padding(
+                      padding: EdgeInsets.all(AppSpacing.lg),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                    error: (e, _) => Text(extractErrorMessage(e)),
                   ),
-                  error: (e, _) => Text(extractErrorMessage(e)),
-                ),
-              ],
-            ),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text(extractErrorMessage(e))),
+                ],
+              ),
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => ErrorState(
+            message: extractErrorMessage(e),
+            onRetry: () => ref.invalidate(obrigacaoDetailProvider(id)),
+          ),
+        ),
       ),
     );
   }
@@ -190,14 +285,20 @@ class ObrigacaoDetailPage extends ConsumerWidget {
     }
   }
 
-  Future<void> _download(BuildContext context, WidgetRef ref, Anexo anexo) async {
+  Future<void> _download(
+    BuildContext context,
+    WidgetRef ref,
+    Anexo anexo,
+  ) async {
     try {
       final bytes = await ref.read(anexoRepositoryProvider).download(anexo.id);
       if (kIsWeb) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Download concluído (visualização local no web é limitada).'),
+              content: Text(
+                'Download concluído (visualização local no web é limitada).',
+              ),
             ),
           );
         }
@@ -237,18 +338,27 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 110,
-            child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+    final textTheme = Theme.of(context).textTheme;
+    final palette = AppPalette.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 110,
+          child: Text(
+            label,
+            style: textTheme.labelLarge?.copyWith(
+              color: palette.muted,
+            ),
           ),
-          Expanded(child: Text(value)),
-        ],
-      ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: textTheme.bodyLarge?.copyWith(color: palette.ink),
+          ),
+        ),
+      ],
     );
   }
 }
