@@ -18,6 +18,7 @@ dependencies:
   open_filex: ^4.6.0
   google_fonts: ^8.2.1
   shared_preferences: ^2.5.6
+  material_ui: ^0.0.1
 
 dev_dependencies:
   flutter_test:

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_palette.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_spacing.dart';
 
