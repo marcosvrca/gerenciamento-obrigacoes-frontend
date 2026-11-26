@@ -1,6 +1,13 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gerenciamento_obrigacoes_app/core/network/api_client.dart';
+import 'package:gerenciamento_obrigacoes_app/core/theme/app_spacing.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/empty_state.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/entity_card.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/list_pagination.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/list_skeleton.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/page_header.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/status_badge.dart';
 import 'package:gerenciamento_obrigacoes_app/features/empresas/data/empresa_repository.dart';
 import 'package:gerenciamento_obrigacoes_app/features/empresas/models/empresa.dart';
 
@@ -18,67 +25,82 @@ class EmpresasPage extends ConsumerStatefulWidget {
 
 class _EmpresasPageState extends ConsumerState<EmpresasPage> {
   String? _filtro;
+  int _page = 0;
+
+  void _setFiltro(String? value) {
+    setState(() {
+      _filtro = value;
+      _page = 0;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final empresasAsync = ref.watch(empresasProvider(_filtro));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Empresas'),
-        actions: [
-          DropdownButtonHideUnderline(
-            child: DropdownButton<String?>(
-              value: _filtro,
-              hint: const Text('Situação', style: TextStyle(color: Colors.white)),
-              dropdownColor: Theme.of(context).colorScheme.surface,
-              items: const [
-                DropdownMenuItem(value: null, child: Text('Todas')),
-                DropdownMenuItem(value: 'ATIVO', child: Text('Ativas')),
-                DropdownMenuItem(value: 'INATIVO', child: Text('Inativas')),
-              ],
-              onChanged: (value) => setState(() => _filtro = value),
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _abrirFormulario(),
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Nova empresa'),
       ),
-      body: empresasAsync.when(
-        data: (empresas) {
-          if (empresas.isEmpty) {
-            return const Center(child: Text('Nenhuma empresa cadastrada.'));
-          }
-          return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(empresasProvider(_filtro)),
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: empresas.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (context, index) {
-                final empresa = empresas[index];
-                return Card(
-                  child: ListTile(
-                    title: Text(empresa.razaoSocial),
-                    subtitle: Text('${empresa.cnpj} • ${empresa.email}'),
-                    trailing: Chip(
-                      label: Text(empresa.situacao),
-                      backgroundColor: empresa.ativa
-                          ? Colors.green.shade50
-                          : Colors.grey.shade200,
-                    ),
-                    onTap: () => _abrirFormulario(empresa: empresa),
-                  ),
-                );
-              },
+      body: ContentWidth(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const PageHeader(
+              title: 'Empresas',
+              subtitle: 'Cadastro de clientes do escritório.',
             ),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text(extractErrorMessage(error))),
+            FilterChipsBar(
+              label: 'Situação',
+              selected: _filtro,
+              onSelected: _setFiltro,
+              options: const [
+                FilterOption(label: 'Todas'),
+                FilterOption(label: 'Ativas', value: 'ATIVO'),
+                FilterOption(label: 'Inativas', value: 'INATIVO'),
+              ],
+            ),
+            Expanded(
+              child: empresasAsync.when(
+                data: (empresas) {
+                  if (empresas.isEmpty) {
+                    return const EmptyState(
+                      icon: Icons.apartment_outlined,
+                      title: 'Nenhuma empresa cadastrada',
+                      subtitle: 'Adicione a primeira empresa para começar.',
+                    );
+                  }
+                  return PaginatedEntityList<Empresa>(
+                    items: empresas,
+                    page: _page,
+                    onPageChanged: (page) => setState(() => _page = page),
+                    onRefresh: () async =>
+                        ref.invalidate(empresasProvider(_filtro)),
+                    itemBuilder: (context, empresa) {
+                      return EntityCard(
+                        leading: AvatarMark(label: empresa.razaoSocial),
+                        title: empresa.razaoSocial,
+                        subtitle: '${empresa.cnpj}  ·  ${empresa.email}',
+                        trailing: SituacaoBadge(
+                          ativa: empresa.ativa,
+                          label: empresa.situacao,
+                        ),
+                        onTap: () => _abrirFormulario(empresa: empresa),
+                      );
+                    },
+                  );
+                },
+                loading: () => const ListSkeleton(),
+                error: (error, _) => ErrorState(
+                  message: extractErrorMessage(error),
+                  onRetry: () => ref.invalidate(empresasProvider(_filtro)),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -145,10 +167,11 @@ class _EmpresaFormDialogState extends ConsumerState<_EmpresaFormDialog> {
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Obrigatório' : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _cnpj,
-                decoration: const InputDecoration(labelText: 'CNPJ (14 dígitos)'),
+                decoration:
+                    const InputDecoration(labelText: 'CNPJ (14 dígitos)'),
                 keyboardType: TextInputType.number,
                 validator: (v) {
                   if (v == null || !RegExp(r'^\d{14}$').hasMatch(v)) {
@@ -157,16 +180,16 @@ class _EmpresaFormDialogState extends ConsumerState<_EmpresaFormDialog> {
                   return null;
                 },
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _email,
                 decoration: const InputDecoration(labelText: 'E-mail'),
                 validator: (v) =>
                     v == null || !v.contains('@') ? 'E-mail inválido' : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               DropdownButtonFormField<String>(
-                value: _situacao,
+                initialValue: _situacao,
                 decoration: const InputDecoration(labelText: 'Situação'),
                 items: const [
                   DropdownMenuItem(value: 'ATIVO', child: Text('Ativo')),
