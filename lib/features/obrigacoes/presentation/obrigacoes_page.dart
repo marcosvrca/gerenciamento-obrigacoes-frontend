@@ -43,6 +43,7 @@ class _ObrigacoesPageState extends ConsumerState<ObrigacoesPage> {
     final showPagination = ListPagination.shouldShow(items.length);
 
     return Scaffold(
+      // FAB floats above the footer — never inside the pagination bar.
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
@@ -56,6 +57,14 @@ class _ObrigacoesPageState extends ConsumerState<ObrigacoesPage> {
         icon: const Icon(Icons.add_rounded),
         label: const Text('Nova obrigação'),
       ),
+      // True shell footer for this pane (sits with the sidebar layout).
+      bottomNavigationBar: showPagination
+          ? ListPaginationBar(
+              page: _page,
+              totalItems: items.length,
+              onPageChanged: (page) => setState(() => _page = page),
+            )
+          : null,
       body: ContentWidth(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -123,12 +132,6 @@ class _ObrigacoesPageState extends ConsumerState<ObrigacoesPage> {
                 ),
               ),
             ),
-            if (showPagination)
-              ListPaginationBar(
-                page: _page,
-                totalItems: items.length,
-                onPageChanged: (page) => setState(() => _page = page),
-              ),
           ],
         ),
       ),

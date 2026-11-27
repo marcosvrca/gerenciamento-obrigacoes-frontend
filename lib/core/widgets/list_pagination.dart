@@ -52,19 +52,21 @@ class ListPaginationBar extends StatelessWidget {
     final palette = AppPalette.of(context);
     final textTheme = Theme.of(context).textTheme;
 
+    // Compact footer only — FAB must stay on Scaffold.floatingActionButton.
     return Material(
       color: palette.surface,
       elevation: 0,
       child: SafeArea(
         top: false,
+        minimum: EdgeInsets.zero,
         child: Container(
           width: double.infinity,
           alignment: Alignment.center,
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.page,
-            AppSpacing.sm,
+            AppSpacing.xs,
             AppSpacing.page,
-            AppSpacing.sm,
+            AppSpacing.xs,
           ),
           decoration: BoxDecoration(
             border: Border(
@@ -86,6 +88,7 @@ class ListPaginationBar extends StatelessWidget {
                   children: [
                     IconButton(
                       tooltip: 'Página anterior',
+                      visualDensity: VisualDensity.compact,
                       onPressed: safePage > 0
                           ? () => onPageChanged(safePage - 1)
                           : null,
@@ -103,6 +106,7 @@ class ListPaginationBar extends StatelessWidget {
                     ),
                     IconButton(
                       tooltip: 'Próxima página',
+                      visualDensity: VisualDensity.compact,
                       onPressed: safePage < pages - 1
                           ? () => onPageChanged(safePage + 1)
                           : null,

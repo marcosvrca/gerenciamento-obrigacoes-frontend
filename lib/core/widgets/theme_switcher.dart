@@ -4,7 +4,9 @@ import 'package:gerenciamento_obrigacoes_app/core/theme/app_visual_theme.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/theme_controller.dart';
 
 class ThemeSwitcherButton extends ConsumerWidget {
-  const ThemeSwitcherButton({super.key});
+  const ThemeSwitcherButton({super.key, this.compact = false});
+
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,21 +32,26 @@ class ThemeSwitcherButton extends ConsumerWidget {
             ),
           )
           .toList(),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(current.icon, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              current.label,
-              style: Theme.of(context).textTheme.labelLarge,
+      child: compact
+          ? Padding(
+              padding: const EdgeInsets.all(8),
+              child: Icon(current.icon, size: 20),
+            )
+          : Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(current.icon, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    current.label,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const Icon(Icons.arrow_drop_down),
+                ],
+              ),
             ),
-            const Icon(Icons.arrow_drop_down),
-          ],
-        ),
-      ),
     );
   }
 }

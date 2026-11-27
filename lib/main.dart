@@ -39,6 +39,10 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
+  bool _sidebarCollapsed = false;
+
+  static const double _sidebarExpanded = 248;
+  static const double _sidebarCollapsedWidth = 76;
 
   static const _pages = [
     ObrigacoesPage(),
@@ -94,11 +98,17 @@ class _HomeShellState extends State<HomeShell> {
       );
     }
 
+    final sidebarWidth =
+        _sidebarCollapsed ? _sidebarCollapsedWidth : _sidebarExpanded;
+
     return Scaffold(
       body: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            width: 248,
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            width: sidebarWidth,
             decoration: BoxDecoration(
               color: palette.surface,
               border: Border(
@@ -112,22 +122,48 @@ class _HomeShellState extends State<HomeShell> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.fromLTRB(
-                      AppSpacing.xl,
-                      AppSpacing.xl,
-                      AppSpacing.xl,
+                      _sidebarCollapsed ? AppSpacing.sm : AppSpacing.lg,
                       AppSpacing.lg,
+                      _sidebarCollapsed ? AppSpacing.sm : AppSpacing.lg,
+                      AppSpacing.sm,
                     ),
-                    child: _BrandMark(),
+                    child: _BrandMark(compact: _sidebarCollapsed),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: _sidebarCollapsed ? 4 : AppSpacing.sm,
+                    ),
+                    child: Align(
+                      alignment: _sidebarCollapsed
+                          ? Alignment.center
+                          : Alignment.centerRight,
+                      child: IconButton(
+                        tooltip: _sidebarCollapsed
+                            ? 'Expandir menu'
+                            : 'Retrair menu',
+                        onPressed: () => setState(
+                          () => _sidebarCollapsed = !_sidebarCollapsed,
+                        ),
+                        icon: Icon(
+                          _sidebarCollapsed
+                              ? Icons.keyboard_double_arrow_right_rounded
+                              : Icons.keyboard_double_arrow_left_rounded,
+                        ),
+                      ),
+                    ),
                   ),
                   Expanded(
                     child: NavigationRail(
-                      extended: true,
+                      extended: !_sidebarCollapsed,
                       selectedIndex: _index,
                       onDestinationSelected: (value) =>
                           setState(() => _index = value),
-                      labelType: NavigationRailLabelType.none,
+                      labelType: _sidebarCollapsed
+                          ? NavigationRailLabelType.none
+                          : NavigationRailLabelType.none,
+                      minWidth: 56,
                       minExtendedWidth: 220,
                       destinations: const [
                         NavigationRailDestination(
@@ -148,19 +184,22 @@ class _HomeShellState extends State<HomeShell> {
                       ],
                     ),
                   ),
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.fromLTRB(
-                      AppSpacing.lg,
+                      _sidebarCollapsed ? 4 : AppSpacing.lg,
                       AppSpacing.sm,
+                      _sidebarCollapsed ? 4 : AppSpacing.lg,
                       AppSpacing.lg,
-                      AppSpacing.xl,
                     ),
-                    child: ThemeSwitcherButton(),
+                    child: _sidebarCollapsed
+                        ? const Center(child: ThemeSwitcherButton(compact: true))
+                        : const ThemeSwitcherButton(),
                   ),
                 ],
               ),
             ),
           ),
+          // Right pane: page owns list + footer; FAB floats above footer.
           Expanded(child: _pages[_index]),
         ],
       ),
@@ -169,9 +208,11 @@ class _HomeShellState extends State<HomeShell> {
 }
 
 class _BrandMark extends StatelessWidget {
-  const _BrandMark();
+  const _BrandMark({this.compact = false});
 
-  Color _markForeground(Color background, ColorScheme scheme) {
+  final bool compact;
+
+  Color _markForeground(Color background) {
     return ThemeData.estimateBrightnessForColor(background) == Brightness.dark
         ? Colors.white
         : Colors.black;
@@ -181,30 +222,35 @@ class _BrandMark extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final palette = AppPalette.of(context);
-    final scheme = Theme.of(context).colorScheme;
+
+    final mark = Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: palette.brandMark,
+        borderRadius: BorderRadius.circular(AppRadii.sm),
+        border: Border.all(
+          color: palette.border,
+          width: palette.borderWidth,
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        'GO',
+        style: textTheme.titleSmall?.copyWith(
+          color: _markForeground(palette.brandMark),
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+
+    if (compact) {
+      return Center(child: mark);
+    }
 
     return Row(
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: palette.brandMark,
-            borderRadius: BorderRadius.circular(AppRadii.sm),
-            border: Border.all(
-              color: palette.border,
-              width: palette.borderWidth,
-            ),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            'GO',
-            style: textTheme.titleSmall?.copyWith(
-              color: _markForeground(palette.brandMark, scheme),
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ),
+        mark,
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Column(
