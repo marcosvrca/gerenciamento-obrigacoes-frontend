@@ -1,9 +1,11 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gerenciamento_obrigacoes_app/core/shell/shell_pagination.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_palette.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_spacing.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_theme.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/theme_controller.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/list_pagination.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/theme_switcher.dart';
 import 'package:gerenciamento_obrigacoes_app/features/empresas/presentation/empresas_page.dart';
 import 'package:gerenciamento_obrigacoes_app/features/obrigacoes/presentation/obrigacoes_page.dart';
@@ -30,14 +32,14 @@ class GerenciamentoObrigacoesApp extends ConsumerWidget {
   }
 }
 
-class HomeShell extends StatefulWidget {
+class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
   @override
-  State<HomeShell> createState() => _HomeShellState();
+  ConsumerState<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _HomeShellState extends ConsumerState<HomeShell> {
   int _index = 0;
   bool _sidebarCollapsed = false;
 
@@ -100,8 +102,17 @@ class _HomeShellState extends State<HomeShell> {
 
     final sidebarWidth =
         _sidebarCollapsed ? _sidebarCollapsedWidth : _sidebarExpanded;
+    final shellPagination = ref.watch(shellPaginationProvider);
 
     return Scaffold(
+      // Full-bleed footer under sidebar + content (continuous bottom bar).
+      bottomNavigationBar: shellPagination == null
+          ? null
+          : ListPaginationBar(
+              page: shellPagination.page,
+              totalItems: shellPagination.totalItems,
+              onPageChanged: shellPagination.onPageChanged,
+            ),
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

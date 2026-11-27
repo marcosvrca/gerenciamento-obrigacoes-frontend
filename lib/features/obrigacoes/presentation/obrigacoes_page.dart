@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gerenciamento_obrigacoes_app/core/navigation/app_page_route.dart';
 import 'package:gerenciamento_obrigacoes_app/core/network/api_client.dart';
+import 'package:gerenciamento_obrigacoes_app/core/shell/shell_pagination.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/empty_state.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/entity_card.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/list_pagination.dart';
@@ -41,6 +42,7 @@ class _ObrigacoesPageState extends ConsumerState<ObrigacoesPage> {
     final obrigacoesAsync = ref.watch(obrigacoesProvider(_status));
     final items = obrigacoesAsync.valueOrNull ?? const <Obrigacao>[];
     final showPagination = ListPagination.shouldShow(items.length);
+    final wide = MediaQuery.sizeOf(context).width >= 900;
 
     return Scaffold(
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -123,13 +125,19 @@ class _ObrigacoesPageState extends ConsumerState<ObrigacoesPage> {
                 ),
               ),
             ),
-            // Footer inside ContentWidth — same max width as the list, not full pane.
-            if (showPagination)
+            // Desktop: full-bleed bar via HomeShell. Mobile: keep bar in column.
+            if (showPagination && !wide)
               ListPaginationBar(
                 page: _page,
                 totalItems: items.length,
                 onPageChanged: (page) => setState(() => _page = page),
               ),
+            ShellPaginationBinder(
+              enabled: wide && showPagination,
+              page: _page,
+              totalItems: items.length,
+              onPageChanged: (page) => setState(() => _page = page),
+            ),
           ],
         ),
       ),

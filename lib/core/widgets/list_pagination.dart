@@ -25,7 +25,9 @@ class ListPagination {
   }
 }
 
-/// Content-width footer pagination (place inside [ContentWidth] column).
+/// Shell/page footer pagination bar.
+/// On desktop, [HomeShell] renders this as a full-bleed [Scaffold.bottomNavigationBar]
+/// (edge-to-edge under the sidebar). On mobile, list pages place it in the column.
 /// Keep the FAB on [Scaffold.floatingActionButton], not inside this bar.
 class ListPaginationBar extends StatelessWidget {
   const ListPaginationBar({
@@ -123,7 +125,7 @@ class ListPaginationBar extends StatelessWidget {
   }
 }
 
-/// Scrollable page slice only — pair with [ListPaginationBar] in the page column.
+/// Scrollable page slice only — pair with shell or in-page [ListPaginationBar].
 class PaginatedEntityList<T> extends StatelessWidget {
   const PaginatedEntityList({
     super.key,

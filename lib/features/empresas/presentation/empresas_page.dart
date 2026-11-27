@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gerenciamento_obrigacoes_app/core/network/api_client.dart';
+import 'package:gerenciamento_obrigacoes_app/core/shell/shell_pagination.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_spacing.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/empty_state.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/entity_card.dart';
@@ -39,6 +40,7 @@ class _EmpresasPageState extends ConsumerState<EmpresasPage> {
     final empresasAsync = ref.watch(empresasProvider(_filtro));
     final items = empresasAsync.valueOrNull ?? const <Empresa>[];
     final showPagination = ListPagination.shouldShow(items.length);
+    final wide = MediaQuery.sizeOf(context).width >= 900;
 
     return Scaffold(
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -102,12 +104,18 @@ class _EmpresasPageState extends ConsumerState<EmpresasPage> {
                 ),
               ),
             ),
-            if (showPagination)
+            if (showPagination && !wide)
               ListPaginationBar(
                 page: _page,
                 totalItems: items.length,
                 onPageChanged: (page) => setState(() => _page = page),
               ),
+            ShellPaginationBinder(
+              enabled: wide && showPagination,
+              page: _page,
+              totalItems: items.length,
+              onPageChanged: (page) => setState(() => _page = page),
+            ),
           ],
         ),
       ),
