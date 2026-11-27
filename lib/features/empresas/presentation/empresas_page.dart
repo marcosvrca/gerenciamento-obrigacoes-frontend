@@ -37,13 +37,23 @@ class _EmpresasPageState extends ConsumerState<EmpresasPage> {
   @override
   Widget build(BuildContext context) {
     final empresasAsync = ref.watch(empresasProvider(_filtro));
+    final items = empresasAsync.valueOrNull ?? const <Empresa>[];
+    final showPagination = ListPagination.shouldShow(items.length);
 
     return Scaffold(
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _abrirFormulario(),
         icon: const Icon(Icons.add_rounded),
         label: const Text('Nova empresa'),
       ),
+      bottomNavigationBar: showPagination
+          ? ListPaginationBar(
+              page: _page,
+              totalItems: items.length,
+              onPageChanged: (page) => setState(() => _page = page),
+            )
+          : null,
       body: ContentWidth(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -75,7 +85,7 @@ class _EmpresasPageState extends ConsumerState<EmpresasPage> {
                   return PaginatedEntityList<Empresa>(
                     items: empresas,
                     page: _page,
-                    onPageChanged: (page) => setState(() => _page = page),
+                    bottomClearanceForFab: !showPagination,
                     onRefresh: () async =>
                         ref.invalidate(empresasProvider(_filtro)),
                     itemBuilder: (context, empresa) {

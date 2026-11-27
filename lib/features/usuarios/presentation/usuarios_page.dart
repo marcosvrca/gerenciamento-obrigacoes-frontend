@@ -37,13 +37,23 @@ class _UsuariosPageState extends ConsumerState<UsuariosPage> {
   @override
   Widget build(BuildContext context) {
     final usuariosAsync = ref.watch(usuariosProvider(_filtro));
+    final items = usuariosAsync.valueOrNull ?? const <Usuario>[];
+    final showPagination = ListPagination.shouldShow(items.length);
 
     return Scaffold(
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _abrirFormulario(),
         icon: const Icon(Icons.add_rounded),
         label: const Text('Novo usuário'),
       ),
+      bottomNavigationBar: showPagination
+          ? ListPaginationBar(
+              page: _page,
+              totalItems: items.length,
+              onPageChanged: (page) => setState(() => _page = page),
+            )
+          : null,
       body: ContentWidth(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -76,7 +86,7 @@ class _UsuariosPageState extends ConsumerState<UsuariosPage> {
                   return PaginatedEntityList<Usuario>(
                     items: usuarios,
                     page: _page,
-                    onPageChanged: (page) => setState(() => _page = page),
+                    bottomClearanceForFab: !showPagination,
                     onRefresh: () async =>
                         ref.invalidate(usuariosProvider(_filtro)),
                     itemBuilder: (context, usuario) {

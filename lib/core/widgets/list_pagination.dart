@@ -14,6 +14,8 @@ class ListPagination {
     return (totalItems / pageSize).ceil();
   }
 
+  static bool shouldShow(int totalItems) => totalItems > pageSize;
+
   static List<T> slice<T>(List<T> items, int page) {
     if (items.isEmpty) return const [];
     final safePage = page.clamp(0, pageCount(items.length) - 1);
@@ -23,6 +25,8 @@ class ListPagination {
   }
 }
 
+/// Footer pagination for [Scaffold.bottomNavigationBar].
+/// Keeps controls at the bottom and lets the FAB float above (Material).
 class ListPaginationBar extends StatelessWidget {
   const ListPaginationBar({
     super.key,
@@ -37,7 +41,7 @@ class ListPaginationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (totalItems <= ListPagination.pageSize) {
+    if (!ListPagination.shouldShow(totalItems)) {
       return const SizedBox.shrink();
     }
 
@@ -48,107 +52,111 @@ class ListPaginationBar extends StatelessWidget {
     final palette = AppPalette.of(context);
     final textTheme = Theme.of(context).textTheme;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.page,
-        AppSpacing.md,
-        AppSpacing.page,
-        AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: palette.border, width: palette.borderWidth),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '$start–$end de $totalItems',
-            textAlign: TextAlign.center,
-            style: textTheme.bodySmall?.copyWith(color: palette.muted),
+    return Material(
+      color: palette.surface,
+      elevation: 0,
+      child: SafeArea(
+        top: false,
+        child: Container(
+          width: double.infinity,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.page,
+            AppSpacing.sm,
+            AppSpacing.page,
+            AppSpacing.sm,
           ),
-          const SizedBox(height: AppSpacing.xs),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                tooltip: 'Página anterior',
-                onPressed:
-                    safePage > 0 ? () => onPageChanged(safePage - 1) : null,
-                icon: const Icon(Icons.chevron_left_rounded),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                child: Text(
-                  '${safePage + 1} / $pages',
-                  style: textTheme.labelLarge?.copyWith(color: palette.ink),
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: palette.border, width: palette.borderWidth),
+            ),
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$start–$end de $totalItems',
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodySmall?.copyWith(color: palette.muted),
                 ),
-              ),
-              IconButton(
-                tooltip: 'Próxima página',
-                onPressed: safePage < pages - 1
-                    ? () => onPageChanged(safePage + 1)
-                    : null,
-                icon: const Icon(Icons.chevron_right_rounded),
-              ),
-            ],
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      tooltip: 'Página anterior',
+                      onPressed: safePage > 0
+                          ? () => onPageChanged(safePage - 1)
+                          : null,
+                      icon: const Icon(Icons.chevron_left_rounded),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                      ),
+                      child: Text(
+                        '${safePage + 1} / $pages',
+                        style:
+                            textTheme.labelLarge?.copyWith(color: palette.ink),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Próxima página',
+                      onPressed: safePage < pages - 1
+                          ? () => onPageChanged(safePage + 1)
+                          : null,
+                      icon: const Icon(Icons.chevron_right_rounded),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
+/// Scrollable page slice only — pagination belongs in [Scaffold.bottomNavigationBar].
 class PaginatedEntityList<T> extends StatelessWidget {
   const PaginatedEntityList({
     super.key,
     required this.items,
     required this.page,
-    required this.onPageChanged,
     required this.itemBuilder,
     required this.onRefresh,
+    this.bottomClearanceForFab = false,
   });
 
   final List<T> items;
   final int page;
-  final ValueChanged<int> onPageChanged;
   final Widget Function(BuildContext context, T item) itemBuilder;
   final Future<void> Function() onRefresh;
+
+  /// Extra list padding when there is no footer and the FAB floats over content.
+  final bool bottomClearanceForFab;
 
   @override
   Widget build(BuildContext context) {
     final pageItems = ListPagination.slice(items, page);
+    final bottom = bottomClearanceForFab ? 88.0 : AppSpacing.lg;
 
-    return Column(
-      children: [
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: onRefresh,
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.page,
-                AppSpacing.sm,
-                AppSpacing.page,
-                AppSpacing.lg,
-              ),
-              itemCount: pageItems.length,
-              separatorBuilder: (_, __) =>
-                  const SizedBox(height: AppSpacing.md),
-              itemBuilder: (context, index) =>
-                  itemBuilder(context, pageItems[index]),
-            ),
-          ),
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView.separated(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.page,
+          AppSpacing.sm,
+          AppSpacing.page,
+          bottom,
         ),
-        ListPaginationBar(
-          page: page,
-          totalItems: items.length,
-          onPageChanged: onPageChanged,
-        ),
-        // Clearance for extended FABs (Nova obrigação / empresa / usuário).
-        const SizedBox(height: 104),
-      ],
+        itemCount: pageItems.length,
+        separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+        itemBuilder: (context, index) =>
+            itemBuilder(context, pageItems[index]),
+      ),
     );
   }
 }

@@ -39,8 +39,11 @@ class _ObrigacoesPageState extends ConsumerState<ObrigacoesPage> {
   @override
   Widget build(BuildContext context) {
     final obrigacoesAsync = ref.watch(obrigacoesProvider(_status));
+    final items = obrigacoesAsync.valueOrNull ?? const <Obrigacao>[];
+    final showPagination = ListPagination.shouldShow(items.length);
 
     return Scaffold(
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final salvou = await Navigator.of(context).push<bool>(
@@ -53,6 +56,13 @@ class _ObrigacoesPageState extends ConsumerState<ObrigacoesPage> {
         icon: const Icon(Icons.add_rounded),
         label: const Text('Nova obrigação'),
       ),
+      bottomNavigationBar: showPagination
+          ? ListPaginationBar(
+              page: _page,
+              totalItems: items.length,
+              onPageChanged: (page) => setState(() => _page = page),
+            )
+          : null,
       body: ContentWidth(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -86,7 +96,7 @@ class _ObrigacoesPageState extends ConsumerState<ObrigacoesPage> {
                   return PaginatedEntityList<Obrigacao>(
                     items: obrigacoes,
                     page: _page,
-                    onPageChanged: (page) => setState(() => _page = page),
+                    bottomClearanceForFab: !showPagination,
                     onRefresh: () async =>
                         ref.invalidate(obrigacoesProvider(_status)),
                     itemBuilder: (context, item) {
