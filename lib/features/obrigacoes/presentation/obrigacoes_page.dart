@@ -56,13 +56,6 @@ class _ObrigacoesPageState extends ConsumerState<ObrigacoesPage> {
         icon: const Icon(Icons.add_rounded),
         label: const Text('Nova obrigação'),
       ),
-      bottomNavigationBar: showPagination
-          ? ListPaginationBar(
-              page: _page,
-              totalItems: items.length,
-              onPageChanged: (page) => setState(() => _page = page),
-            )
-          : null,
       body: ContentWidth(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -130,6 +123,12 @@ class _ObrigacoesPageState extends ConsumerState<ObrigacoesPage> {
                 ),
               ),
             ),
+            if (showPagination)
+              ListPaginationBar(
+                page: _page,
+                totalItems: items.length,
+                onPageChanged: (page) => setState(() => _page = page),
+              ),
           ],
         ),
       ),

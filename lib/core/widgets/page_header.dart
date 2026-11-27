@@ -286,12 +286,28 @@ class ContentWidth extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: AppSpacing.maxContentWidth),
-        child: child,
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxW = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : AppSpacing.maxContentWidth;
+        final width = maxW < AppSpacing.maxContentWidth
+            ? maxW
+            : AppSpacing.maxContentWidth;
+        // Pass a bounded height so Column+Expanded inside list pages work
+        // correctly (Align alone can leave vertical constraints loose).
+        final height =
+            constraints.maxHeight.isFinite ? constraints.maxHeight : null;
+
+        return Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+            width: width,
+            height: height,
+            child: child,
+          ),
+        );
+      },
     );
   }
 }
