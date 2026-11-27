@@ -47,13 +47,6 @@ class _UsuariosPageState extends ConsumerState<UsuariosPage> {
         icon: const Icon(Icons.add_rounded),
         label: const Text('Novo usuário'),
       ),
-      bottomNavigationBar: showPagination
-          ? ListPaginationBar(
-              page: _page,
-              totalItems: items.length,
-              onPageChanged: (page) => setState(() => _page = page),
-            )
-          : null,
       body: ContentWidth(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -110,6 +103,12 @@ class _UsuariosPageState extends ConsumerState<UsuariosPage> {
                 ),
               ),
             ),
+            if (showPagination)
+              ListPaginationBar(
+                page: _page,
+                totalItems: items.length,
+                onPageChanged: (page) => setState(() => _page = page),
+              ),
           ],
         ),
       ),

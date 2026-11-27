@@ -25,8 +25,8 @@ class ListPagination {
   }
 }
 
-/// Footer pagination for [Scaffold.bottomNavigationBar].
-/// Keeps controls at the bottom and lets the FAB float above (Material).
+/// Content-width footer pagination (place inside [ContentWidth] column).
+/// Keep the FAB on [Scaffold.floatingActionButton], not inside this bar.
 class ListPaginationBar extends StatelessWidget {
   const ListPaginationBar({
     super.key,
@@ -123,7 +123,7 @@ class ListPaginationBar extends StatelessWidget {
   }
 }
 
-/// Scrollable page slice only — pagination belongs in [Scaffold.bottomNavigationBar].
+/// Scrollable page slice only — pair with [ListPaginationBar] in the page column.
 class PaginatedEntityList<T> extends StatelessWidget {
   const PaginatedEntityList({
     super.key,

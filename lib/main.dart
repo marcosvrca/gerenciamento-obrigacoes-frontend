@@ -125,34 +125,45 @@ class _HomeShellState extends State<HomeShell> {
                   Padding(
                     padding: EdgeInsets.fromLTRB(
                       _sidebarCollapsed ? AppSpacing.sm : AppSpacing.lg,
-                      AppSpacing.lg,
-                      _sidebarCollapsed ? AppSpacing.sm : AppSpacing.lg,
+                      AppSpacing.md,
+                      _sidebarCollapsed ? AppSpacing.sm : AppSpacing.sm,
                       AppSpacing.sm,
                     ),
-                    child: _BrandMark(compact: _sidebarCollapsed),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: _sidebarCollapsed ? 4 : AppSpacing.sm,
-                    ),
-                    child: Align(
-                      alignment: _sidebarCollapsed
-                          ? Alignment.center
-                          : Alignment.centerRight,
-                      child: IconButton(
-                        tooltip: _sidebarCollapsed
-                            ? 'Expandir menu'
-                            : 'Retrair menu',
-                        onPressed: () => setState(
-                          () => _sidebarCollapsed = !_sidebarCollapsed,
-                        ),
-                        icon: Icon(
-                          _sidebarCollapsed
-                              ? Icons.keyboard_double_arrow_right_rounded
-                              : Icons.keyboard_double_arrow_left_rounded,
-                        ),
-                      ),
-                    ),
+                    child: _sidebarCollapsed
+                        ? Column(
+                            children: [
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: IconButton(
+                                  tooltip: 'Expandir menu',
+                                  visualDensity: VisualDensity.compact,
+                                  onPressed: () => setState(
+                                    () => _sidebarCollapsed = false,
+                                  ),
+                                  icon: const Icon(
+                                    Icons.keyboard_double_arrow_right_rounded,
+                                  ),
+                                ),
+                              ),
+                              const _BrandMark(compact: true),
+                            ],
+                          )
+                        : Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Expanded(child: _BrandMark()),
+                              IconButton(
+                                tooltip: 'Retrair menu',
+                                visualDensity: VisualDensity.compact,
+                                onPressed: () => setState(
+                                  () => _sidebarCollapsed = true,
+                                ),
+                                icon: const Icon(
+                                  Icons.keyboard_double_arrow_left_rounded,
+                                ),
+                              ),
+                            ],
+                          ),
                   ),
                   Expanded(
                     child: NavigationRail(

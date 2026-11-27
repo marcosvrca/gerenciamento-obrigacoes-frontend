@@ -47,13 +47,6 @@ class _EmpresasPageState extends ConsumerState<EmpresasPage> {
         icon: const Icon(Icons.add_rounded),
         label: const Text('Nova empresa'),
       ),
-      bottomNavigationBar: showPagination
-          ? ListPaginationBar(
-              page: _page,
-              totalItems: items.length,
-              onPageChanged: (page) => setState(() => _page = page),
-            )
-          : null,
       body: ContentWidth(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -109,6 +102,12 @@ class _EmpresasPageState extends ConsumerState<EmpresasPage> {
                 ),
               ),
             ),
+            if (showPagination)
+              ListPaginationBar(
+                page: _page,
+                totalItems: items.length,
+                onPageChanged: (page) => setState(() => _page = page),
+              ),
           ],
         ),
       ),
@@ -183,12 +182,10 @@ class _EmpresaFormDialogState extends ConsumerState<_EmpresaFormDialog> {
                 decoration:
                     const InputDecoration(labelText: 'CNPJ (14 dígitos)'),
                 keyboardType: TextInputType.number,
-                validator: (v) {
-                  if (v == null || !RegExp(r'^\d{14}$').hasMatch(v)) {
-                    return 'Informe 14 dígitos';
-                  }
-                  return null;
-                },
+                validator: (v) =>
+                    v == null || !RegExp(r'^\d{14}$').hasMatch(v)
+                        ? 'Informe 14 dígitos'
+                        : null,
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(
