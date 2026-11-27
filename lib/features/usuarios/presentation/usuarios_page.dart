@@ -7,7 +7,9 @@ import 'package:gerenciamento_obrigacoes_app/core/widgets/empty_state.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/entity_card.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/list_pagination.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/list_skeleton.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/page_create_fab.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/page_header.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/searchable_select_field.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/status_badge.dart';
 import 'package:gerenciamento_obrigacoes_app/features/usuarios/data/usuario_repository.dart';
 import 'package:gerenciamento_obrigacoes_app/features/usuarios/models/usuario.dart';
@@ -18,7 +20,10 @@ final usuariosProvider =
 });
 
 class UsuariosPage extends ConsumerStatefulWidget {
-  const UsuariosPage({super.key});
+  const UsuariosPage({super.key, this.shellTabIndex = 2});
+
+  /// Slot in the unified shell pagination map (desktop IndexedStack).
+  final int shellTabIndex;
 
   @override
   ConsumerState<UsuariosPage> createState() => _UsuariosPageState();
@@ -57,10 +62,10 @@ class _UsuariosPageState extends ConsumerState<UsuariosPage> {
 
     return Scaffold(
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: PageCreateFab(
+        label: 'Novo usuário',
+        liftAbovePagination: showPagination,
         onPressed: () => _abrirFormulario(),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Novo usuário'),
       ),
       body: ContentWidth(
         child: Column(
@@ -126,6 +131,7 @@ class _UsuariosPageState extends ConsumerState<UsuariosPage> {
                 onPageChanged: (page) => setState(() => _page = page),
               ),
             ShellPaginationBinder(
+              tabIndex: widget.shellTabIndex,
               enabled: wide && showPagination,
               page: _page,
               totalItems: items.length,
@@ -205,14 +211,18 @@ class _UsuarioFormDialogState extends ConsumerState<_UsuarioFormDialog> {
                     v == null || !v.contains('@') ? 'E-mail inválido' : null,
               ),
               const SizedBox(height: AppSpacing.md),
-              DropdownButtonFormField<String>(
-                initialValue: _situacao,
-                decoration: const InputDecoration(labelText: 'Situação'),
-                items: const [
-                  DropdownMenuItem(value: 'ATIVO', child: Text('Ativo')),
-                  DropdownMenuItem(value: 'INATIVO', child: Text('Inativo')),
+              SearchableSelectField<String>(
+                label: 'Situação',
+                value: _situacao,
+                options: const [
+                  SearchableSelectOption(value: 'ATIVO', label: 'Ativo'),
+                  SearchableSelectOption(value: 'INATIVO', label: 'Inativo'),
                 ],
-                onChanged: (value) => setState(() => _situacao = value!),
+                onChanged: (value) {
+                  if (value != null) setState(() => _situacao = value);
+                },
+                validator: (v) =>
+                    v == null ? 'Selecione a situação' : null,
               ),
             ],
           ),

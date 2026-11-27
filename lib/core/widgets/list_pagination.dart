@@ -28,9 +28,9 @@ class ListPagination {
   }
 }
 
-/// Thin full-width pagination footer (intrinsic height only — never expands).
-/// Desktop: pinned under the shell by [HomeShell]. Mobile: in the page column.
-/// Keep the FAB on [Scaffold.floatingActionButton], not inside this bar.
+/// Thin pagination controls (intrinsic height only — never expands).
+/// Desktop: embedded in unified [HomeShell] chrome (no top seam).
+/// Mobile: in the page column (optional top divider).
 class ListPaginationBar extends StatelessWidget {
   const ListPaginationBar({
     super.key,
@@ -38,6 +38,7 @@ class ListPaginationBar extends StatelessWidget {
     required this.totalItems,
     required this.onPageChanged,
     this.alwaysShow = false,
+    this.embeddedInShell = false,
   });
 
   final int page;
@@ -47,11 +48,11 @@ class ListPaginationBar extends StatelessWidget {
   /// When true, show the bar whenever [totalItems] > 0 (even a single page).
   final bool alwaysShow;
 
+  /// Part of shell chrome: same surface, no top border (avoids a split look).
+  final bool embeddedInShell;
+
   @override
   Widget build(BuildContext context) {
-    // Parents decide when to mount this bar. Do not re-apply shouldShow here:
-    // HomeShell mounts from binder config (including users with alwaysShow and
-    // fewer than pageSize items); a second gate would hide that footer again.
     if (totalItems <= 0) {
       return const SizedBox.shrink();
     }
@@ -63,9 +64,64 @@ class ListPaginationBar extends StatelessWidget {
     final palette = AppPalette.of(context);
     final textTheme = Theme.of(context).textTheme;
 
-    // Column + mainAxisSize.min keeps the bar thin even under loose max-height
-    // constraints (e.g. Scaffold.bottomNavigationBar). Avoid Container.alignment,
-    // which expands to fill those constraints and hides the shell.
+    final content = Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.page,
+        AppSpacing.xs,
+        AppSpacing.page,
+        AppSpacing.xs,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$start–$end de $totalItems',
+            textAlign: TextAlign.center,
+            style: textTheme.bodySmall?.copyWith(color: palette.muted),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              IconButton(
+                tooltip: 'Página anterior',
+                visualDensity: VisualDensity.compact,
+                onPressed: safePage > 0
+                    ? () => onPageChanged(safePage - 1)
+                    : null,
+                icon: const Icon(Icons.chevron_left_rounded),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                ),
+                child: Text(
+                  '${safePage + 1} / $pages',
+                  style: textTheme.labelLarge?.copyWith(color: palette.ink),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Próxima página',
+                visualDensity: VisualDensity.compact,
+                onPressed: safePage < pages - 1
+                    ? () => onPageChanged(safePage + 1)
+                    : null,
+                icon: const Icon(Icons.chevron_right_rounded),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    if (embeddedInShell) {
+      return SafeArea(
+        top: false,
+        minimum: EdgeInsets.zero,
+        child: content,
+      );
+    }
+
     return Material(
       color: palette.surface,
       elevation: 0,
@@ -78,56 +134,7 @@ class ListPaginationBar extends StatelessWidget {
               top: BorderSide(color: palette.border, width: palette.borderWidth),
             ),
           ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.page,
-              AppSpacing.xs,
-              AppSpacing.page,
-              AppSpacing.xs,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '$start–$end de $totalItems',
-                  textAlign: TextAlign.center,
-                  style: textTheme.bodySmall?.copyWith(color: palette.muted),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    IconButton(
-                      tooltip: 'Página anterior',
-                      visualDensity: VisualDensity.compact,
-                      onPressed: safePage > 0
-                          ? () => onPageChanged(safePage - 1)
-                          : null,
-                      icon: const Icon(Icons.chevron_left_rounded),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                      ),
-                      child: Text(
-                        '${safePage + 1} / $pages',
-                        style:
-                            textTheme.labelLarge?.copyWith(color: palette.ink),
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'Próxima página',
-                      visualDensity: VisualDensity.compact,
-                      onPressed: safePage < pages - 1
-                          ? () => onPageChanged(safePage + 1)
-                          : null,
-                      icon: const Icon(Icons.chevron_right_rounded),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+          child: content,
         ),
       ),
     );

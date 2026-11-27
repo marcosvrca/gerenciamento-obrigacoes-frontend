@@ -7,7 +7,9 @@ import 'package:gerenciamento_obrigacoes_app/core/widgets/empty_state.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/entity_card.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/list_pagination.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/list_skeleton.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/page_create_fab.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/page_header.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/searchable_select_field.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/status_badge.dart';
 import 'package:gerenciamento_obrigacoes_app/features/empresas/data/empresa_repository.dart';
 import 'package:gerenciamento_obrigacoes_app/features/empresas/models/empresa.dart';
@@ -18,7 +20,10 @@ final empresasProvider =
 });
 
 class EmpresasPage extends ConsumerStatefulWidget {
-  const EmpresasPage({super.key});
+  const EmpresasPage({super.key, this.shellTabIndex = 1});
+
+  /// Slot in the unified shell pagination map (desktop IndexedStack).
+  final int shellTabIndex;
 
   @override
   ConsumerState<EmpresasPage> createState() => _EmpresasPageState();
@@ -44,10 +49,10 @@ class _EmpresasPageState extends ConsumerState<EmpresasPage> {
 
     return Scaffold(
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: PageCreateFab(
+        label: 'Nova empresa',
+        liftAbovePagination: showPagination,
         onPressed: () => _abrirFormulario(),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Nova empresa'),
       ),
       body: ContentWidth(
         child: Column(
@@ -111,6 +116,7 @@ class _EmpresasPageState extends ConsumerState<EmpresasPage> {
                 onPageChanged: (page) => setState(() => _page = page),
               ),
             ShellPaginationBinder(
+              tabIndex: widget.shellTabIndex,
               enabled: wide && showPagination,
               page: _page,
               totalItems: items.length,
@@ -203,14 +209,18 @@ class _EmpresaFormDialogState extends ConsumerState<_EmpresaFormDialog> {
                     v == null || !v.contains('@') ? 'E-mail inválido' : null,
               ),
               const SizedBox(height: AppSpacing.md),
-              DropdownButtonFormField<String>(
-                initialValue: _situacao,
-                decoration: const InputDecoration(labelText: 'Situação'),
-                items: const [
-                  DropdownMenuItem(value: 'ATIVO', child: Text('Ativo')),
-                  DropdownMenuItem(value: 'INATIVO', child: Text('Inativo')),
+              SearchableSelectField<String>(
+                label: 'Situação',
+                value: _situacao,
+                options: const [
+                  SearchableSelectOption(value: 'ATIVO', label: 'Ativo'),
+                  SearchableSelectOption(value: 'INATIVO', label: 'Inativo'),
                 ],
-                onChanged: (value) => setState(() => _situacao = value!),
+                onChanged: (value) {
+                  if (value != null) setState(() => _situacao = value);
+                },
+                validator: (v) =>
+                    v == null ? 'Selecione a situação' : null,
               ),
             ],
           ),
