@@ -49,39 +49,51 @@ class ListPaginationBar extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.page,
-        AppSpacing.sm,
-        AppSpacing.page,
         AppSpacing.md,
+        AppSpacing.page,
+        AppSpacing.sm,
       ),
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(color: palette.border, width: palette.borderWidth),
         ),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: Text(
-              '$start–$end de $totalItems',
-              style: textTheme.bodySmall?.copyWith(color: palette.muted),
-            ),
-          ),
-          IconButton(
-            tooltip: 'Página anterior',
-            onPressed: safePage > 0 ? () => onPageChanged(safePage - 1) : null,
-            icon: const Icon(Icons.chevron_left_rounded),
-          ),
           Text(
-            '${safePage + 1} / $pages',
-            style: textTheme.labelLarge?.copyWith(color: palette.ink),
+            '$start–$end de $totalItems',
+            textAlign: TextAlign.center,
+            style: textTheme.bodySmall?.copyWith(color: palette.muted),
           ),
-          IconButton(
-            tooltip: 'Próxima página',
-            onPressed:
-                safePage < pages - 1 ? () => onPageChanged(safePage + 1) : null,
-            icon: const Icon(Icons.chevron_right_rounded),
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                tooltip: 'Página anterior',
+                onPressed:
+                    safePage > 0 ? () => onPageChanged(safePage - 1) : null,
+                icon: const Icon(Icons.chevron_left_rounded),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                child: Text(
+                  '${safePage + 1} / $pages',
+                  style: textTheme.labelLarge?.copyWith(color: palette.ink),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Próxima página',
+                onPressed: safePage < pages - 1
+                    ? () => onPageChanged(safePage + 1)
+                    : null,
+                icon: const Icon(Icons.chevron_right_rounded),
+              ),
+            ],
           ),
         ],
       ),
@@ -134,7 +146,8 @@ class PaginatedEntityList<T> extends StatelessWidget {
           totalItems: items.length,
           onPageChanged: onPageChanged,
         ),
-        const SizedBox(height: 72),
+        // Clearance for extended FABs (Nova obrigação / empresa / usuário).
+        const SizedBox(height: 104),
       ],
     );
   }
