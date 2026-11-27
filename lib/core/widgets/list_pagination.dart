@@ -14,7 +14,10 @@ class ListPagination {
     return (totalItems / pageSize).ceil();
   }
 
-  static bool shouldShow(int totalItems) => totalItems > pageSize;
+  /// Default: only when there is more than one page.
+  /// Use [always] to keep controls visible even with a single page (e.g. users).
+  static bool shouldShow(int totalItems, {bool always = false}) =>
+      always ? totalItems > 0 : totalItems > pageSize;
 
   static List<T> slice<T>(List<T> items, int page) {
     if (items.isEmpty) return const [];
@@ -34,15 +37,19 @@ class ListPaginationBar extends StatelessWidget {
     required this.page,
     required this.totalItems,
     required this.onPageChanged,
+    this.alwaysShow = false,
   });
 
   final int page;
   final int totalItems;
   final ValueChanged<int> onPageChanged;
 
+  /// When true, show the bar whenever [totalItems] > 0 (even a single page).
+  final bool alwaysShow;
+
   @override
   Widget build(BuildContext context) {
-    if (!ListPagination.shouldShow(totalItems)) {
+    if (!ListPagination.shouldShow(totalItems, always: alwaysShow)) {
       return const SizedBox.shrink();
     }
 

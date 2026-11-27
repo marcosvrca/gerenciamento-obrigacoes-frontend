@@ -35,12 +35,25 @@ class _UsuariosPageState extends ConsumerState<UsuariosPage> {
     });
   }
 
+  void _clampPage(int totalItems) {
+    final maxPage = ListPagination.pageCount(totalItems) - 1;
+    if (_page > maxPage) {
+      setState(() => _page = maxPage < 0 ? 0 : maxPage);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final usuariosAsync = ref.watch(usuariosProvider(_filtro));
     final items = usuariosAsync.valueOrNull ?? const <Usuario>[];
-    final showPagination = ListPagination.shouldShow(items.length);
+    // Always show pagination when there is at least one user (even page 1/1).
+    final showPagination =
+        ListPagination.shouldShow(items.length, always: true);
     final wide = MediaQuery.sizeOf(context).width >= 900;
+
+    ref.listen(usuariosProvider(_filtro), (previous, next) {
+      next.whenData(_clampPage);
+    });
 
     return Scaffold(
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -109,6 +122,7 @@ class _UsuariosPageState extends ConsumerState<UsuariosPage> {
               ListPaginationBar(
                 page: _page,
                 totalItems: items.length,
+                alwaysShow: true,
                 onPageChanged: (page) => setState(() => _page = page),
               ),
             ShellPaginationBinder(
@@ -129,6 +143,7 @@ class _UsuariosPageState extends ConsumerState<UsuariosPage> {
       builder: (_) => _UsuarioFormDialog(usuario: usuario),
     );
     if (salvou == true) {
+      // Refresh list + pagination totals after create/edit.
       ref.invalidate(usuariosProvider(_filtro));
     }
   }

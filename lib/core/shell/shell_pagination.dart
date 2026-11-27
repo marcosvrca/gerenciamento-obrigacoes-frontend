@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:gerenciamento_obrigacoes_app/core/widgets/list_pagination.dart';
 
 /// Pagination state owned by list pages, rendered by [HomeShell] as a thin
 /// full-bleed bar under the Expanded shell (sidebar + content stay visible).
@@ -74,7 +73,8 @@ class _ShellPaginationBinderState extends ConsumerState<ShellPaginationBinder> {
     final notifier = ref.read(shellPaginationProvider.notifier);
     final current = ref.read(shellPaginationProvider);
 
-    if (!widget.enabled || !ListPagination.shouldShow(widget.totalItems)) {
+    // Visibility is owned by the page via [enabled] (e.g. always on for users).
+    if (!widget.enabled) {
       if (current != null) notifier.state = null;
       return;
     }
