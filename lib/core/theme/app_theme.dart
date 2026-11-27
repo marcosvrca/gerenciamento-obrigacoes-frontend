@@ -390,6 +390,43 @@ class AppTheme {
           side: borderSide,
         ),
       ),
+      dropdownMenuTheme: DropdownMenuThemeData(
+        textStyle: textTheme.bodyMedium?.copyWith(color: palette.ink),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: palette.surface,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            borderSide: borderSide,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            borderSide: borderSide,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            borderSide: BorderSide(
+              color: scheme.primary,
+              width: highContrast ? 3 : 1.5,
+            ),
+          ),
+        ),
+        menuStyle: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(palette.surface),
+          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+          elevation: const WidgetStatePropertyAll(2),
+          shadowColor: WidgetStatePropertyAll(scheme.shadow),
+          padding: const WidgetStatePropertyAll(
+            EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          ),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadii.md),
+              side: borderSide,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

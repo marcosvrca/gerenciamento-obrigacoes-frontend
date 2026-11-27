@@ -118,6 +118,12 @@ class _FilterDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final fieldRadius = BorderRadius.circular(AppRadii.md);
+    final menuRadius = BorderRadius.circular(AppRadii.md);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.page,
@@ -129,21 +135,87 @@ class _FilterDropdown extends StatelessWidget {
         key: ValueKey(selected ?? '__all__'),
         initialValue: selected,
         isExpanded: true,
+        borderRadius: menuRadius,
+        dropdownColor: palette.surface,
+        icon: Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: scheme.primary,
+        ),
+        style: textTheme.bodyLarge?.copyWith(color: palette.ink),
         decoration: InputDecoration(
           labelText: label,
+          filled: true,
+          fillColor: palette.surface,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.lg,
             vertical: AppSpacing.md,
           ),
+          border: OutlineInputBorder(
+            borderRadius: fieldRadius,
+            borderSide: BorderSide(
+              color: palette.border,
+              width: palette.borderWidth,
+            ),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: fieldRadius,
+            borderSide: BorderSide(
+              color: palette.border,
+              width: palette.borderWidth,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: fieldRadius,
+            borderSide: BorderSide(color: scheme.primary, width: 1.5),
+          ),
         ),
-        items: options
-            .map(
-              (option) => DropdownMenuItem<String?>(
-                value: option.value,
-                child: Text(option.label),
+        selectedItemBuilder: (context) {
+          return options
+              .map(
+                (option) => Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    option.label,
+                    style: textTheme.bodyLarge?.copyWith(
+                      color: palette.ink,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              )
+              .toList();
+        },
+        items: [
+          for (var i = 0; i < options.length; i++)
+            DropdownMenuItem<String?>(
+              value: options[i].value,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                decoration: BoxDecoration(
+                  border: i == options.length - 1
+                      ? null
+                      : Border(
+                          bottom: BorderSide(
+                            color: palette.border.withValues(alpha: 0.85),
+                            width: palette.borderWidth,
+                          ),
+                        ),
+                ),
+                child: Text(
+                  options[i].label,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: selected == options[i].value
+                        ? scheme.primary
+                        : palette.ink,
+                    fontWeight: selected == options[i].value
+                        ? FontWeight.w700
+                        : FontWeight.w500,
+                  ),
+                ),
               ),
-            )
-            .toList(),
+            ),
+        ],
         onChanged: (value) => onSelected(value),
       ),
     );
