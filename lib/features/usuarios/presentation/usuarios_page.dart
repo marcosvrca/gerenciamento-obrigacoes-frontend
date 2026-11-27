@@ -52,7 +52,7 @@ class _UsuariosPageState extends ConsumerState<UsuariosPage> {
     final wide = MediaQuery.sizeOf(context).width >= 900;
 
     ref.listen(usuariosProvider(_filtro), (previous, next) {
-      next.whenData(_clampPage);
+      next.whenData((list) => _clampPage(list.length));
     });
 
     return Scaffold(
