@@ -25,9 +25,8 @@ class ListPagination {
   }
 }
 
-/// Shell/page footer pagination bar.
-/// On desktop, [HomeShell] renders this as a full-bleed [Scaffold.bottomNavigationBar]
-/// (edge-to-edge under the sidebar). On mobile, list pages place it in the column.
+/// Thin full-width pagination footer (intrinsic height only — never expands).
+/// Desktop: pinned under the shell by [HomeShell]. Mobile: in the page column.
 /// Keep the FAB on [Scaffold.floatingActionButton], not inside this bar.
 class ListPaginationBar extends StatelessWidget {
   const ListPaginationBar({
@@ -54,29 +53,28 @@ class ListPaginationBar extends StatelessWidget {
     final palette = AppPalette.of(context);
     final textTheme = Theme.of(context).textTheme;
 
-    // Compact footer only — FAB must stay on Scaffold.floatingActionButton.
+    // Column + mainAxisSize.min keeps the bar thin even under loose max-height
+    // constraints (e.g. Scaffold.bottomNavigationBar). Avoid Container.alignment,
+    // which expands to fill those constraints and hides the shell.
     return Material(
       color: palette.surface,
       elevation: 0,
       child: SafeArea(
         top: false,
         minimum: EdgeInsets.zero,
-        child: Container(
-          width: double.infinity,
-          alignment: Alignment.center,
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.page,
-            AppSpacing.xs,
-            AppSpacing.page,
-            AppSpacing.xs,
-          ),
+        child: DecoratedBox(
           decoration: BoxDecoration(
             border: Border(
               top: BorderSide(color: palette.border, width: palette.borderWidth),
             ),
           ),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.page,
+              AppSpacing.xs,
+              AppSpacing.page,
+              AppSpacing.xs,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -87,6 +85,7 @@ class ListPaginationBar extends StatelessWidget {
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.max,
                   children: [
                     IconButton(
                       tooltip: 'Página anterior',

@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/list_pagination.dart';
 
-/// Pagination state owned by list pages, rendered by [HomeShell] as a
-/// full-bleed bottom bar (spans under the sidebar on desktop).
+/// Pagination state owned by list pages, rendered by [HomeShell] as a thin
+/// full-bleed bar under the Expanded shell (sidebar + content stay visible).
 class ShellPaginationConfig {
   ShellPaginationConfig({
     required this.page,

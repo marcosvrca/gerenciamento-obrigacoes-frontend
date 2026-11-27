@@ -104,125 +104,135 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         _sidebarCollapsed ? _sidebarCollapsedWidth : _sidebarExpanded;
     final shellPagination = ref.watch(shellPaginationProvider);
 
+    // Column keeps shell (sidebar + content) in Expanded and pins a thin
+    // full-bleed pagination bar below — never using bottomNavigationBar, which
+    // can give the footer loose max-height and let it cover the screen.
     return Scaffold(
-      // Full-bleed footer under sidebar + content (continuous bottom bar).
-      bottomNavigationBar: shellPagination == null
-          ? null
-          : ListPaginationBar(
-              page: shellPagination.page,
-              totalItems: shellPagination.totalItems,
-              onPageChanged: shellPagination.onPageChanged,
-            ),
-      body: Row(
+      body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            width: sidebarWidth,
-            decoration: BoxDecoration(
-              color: palette.surface,
-              border: Border(
-                right: BorderSide(
-                  color: palette.border,
-                  width: palette.borderWidth,
-                ),
-              ),
-            ),
-            child: SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      _sidebarCollapsed ? AppSpacing.sm : AppSpacing.lg,
-                      AppSpacing.md,
-                      _sidebarCollapsed ? AppSpacing.sm : AppSpacing.sm,
-                      AppSpacing.sm,
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  width: sidebarWidth,
+                  decoration: BoxDecoration(
+                    color: palette.surface,
+                    border: Border(
+                      right: BorderSide(
+                        color: palette.border,
+                        width: palette.borderWidth,
+                      ),
                     ),
-                    child: _sidebarCollapsed
-                        ? Column(
-                            children: [
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: IconButton(
-                                  tooltip: 'Expandir menu',
-                                  visualDensity: VisualDensity.compact,
-                                  onPressed: () => setState(
-                                    () => _sidebarCollapsed = false,
-                                  ),
-                                  icon: const Icon(
-                                    Icons.keyboard_double_arrow_right_rounded,
-                                  ),
+                  ),
+                  child: SafeArea(
+                    bottom: false,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            _sidebarCollapsed ? AppSpacing.sm : AppSpacing.lg,
+                            AppSpacing.md,
+                            _sidebarCollapsed ? AppSpacing.sm : AppSpacing.sm,
+                            AppSpacing.sm,
+                          ),
+                          child: _sidebarCollapsed
+                              ? Column(
+                                  children: [
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: IconButton(
+                                        tooltip: 'Expandir menu',
+                                        visualDensity: VisualDensity.compact,
+                                        onPressed: () => setState(
+                                          () => _sidebarCollapsed = false,
+                                        ),
+                                        icon: const Icon(
+                                          Icons
+                                              .keyboard_double_arrow_right_rounded,
+                                        ),
+                                      ),
+                                    ),
+                                    const _BrandMark(compact: true),
+                                  ],
+                                )
+                              : Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Expanded(child: _BrandMark()),
+                                    IconButton(
+                                      tooltip: 'Retrair menu',
+                                      visualDensity: VisualDensity.compact,
+                                      onPressed: () => setState(
+                                        () => _sidebarCollapsed = true,
+                                      ),
+                                      icon: const Icon(
+                                        Icons
+                                            .keyboard_double_arrow_left_rounded,
+                                      ),
+                                    ),
+                                  ],
                                 ),
+                        ),
+                        Expanded(
+                          child: NavigationRail(
+                            extended: !_sidebarCollapsed,
+                            selectedIndex: _index,
+                            onDestinationSelected: (value) =>
+                                setState(() => _index = value),
+                            labelType: NavigationRailLabelType.none,
+                            minWidth: 56,
+                            minExtendedWidth: 220,
+                            destinations: const [
+                              NavigationRailDestination(
+                                icon: Icon(Icons.assignment_outlined),
+                                selectedIcon: Icon(Icons.assignment_rounded),
+                                label: Text('Obrigações'),
                               ),
-                              const _BrandMark(compact: true),
-                            ],
-                          )
-                        : Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Expanded(child: _BrandMark()),
-                              IconButton(
-                                tooltip: 'Retrair menu',
-                                visualDensity: VisualDensity.compact,
-                                onPressed: () => setState(
-                                  () => _sidebarCollapsed = true,
-                                ),
-                                icon: const Icon(
-                                  Icons.keyboard_double_arrow_left_rounded,
-                                ),
+                              NavigationRailDestination(
+                                icon: Icon(Icons.apartment_outlined),
+                                selectedIcon: Icon(Icons.apartment_rounded),
+                                label: Text('Empresas'),
+                              ),
+                              NavigationRailDestination(
+                                icon: Icon(Icons.group_outlined),
+                                selectedIcon: Icon(Icons.group_rounded),
+                                label: Text('Usuários'),
                               ),
                             ],
                           ),
-                  ),
-                  Expanded(
-                    child: NavigationRail(
-                      extended: !_sidebarCollapsed,
-                      selectedIndex: _index,
-                      onDestinationSelected: (value) =>
-                          setState(() => _index = value),
-                      labelType: _sidebarCollapsed
-                          ? NavigationRailLabelType.none
-                          : NavigationRailLabelType.none,
-                      minWidth: 56,
-                      minExtendedWidth: 220,
-                      destinations: const [
-                        NavigationRailDestination(
-                          icon: Icon(Icons.assignment_outlined),
-                          selectedIcon: Icon(Icons.assignment_rounded),
-                          label: Text('Obrigações'),
                         ),
-                        NavigationRailDestination(
-                          icon: Icon(Icons.apartment_outlined),
-                          selectedIcon: Icon(Icons.apartment_rounded),
-                          label: Text('Empresas'),
-                        ),
-                        NavigationRailDestination(
-                          icon: Icon(Icons.group_outlined),
-                          selectedIcon: Icon(Icons.group_rounded),
-                          label: Text('Usuários'),
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            _sidebarCollapsed ? 4 : AppSpacing.lg,
+                            AppSpacing.sm,
+                            _sidebarCollapsed ? 4 : AppSpacing.lg,
+                            AppSpacing.lg,
+                          ),
+                          child: _sidebarCollapsed
+                              ? const Center(
+                                  child: ThemeSwitcherButton(compact: true),
+                                )
+                              : const ThemeSwitcherButton(),
                         ),
                       ],
                     ),
                   ),
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      _sidebarCollapsed ? 4 : AppSpacing.lg,
-                      AppSpacing.sm,
-                      _sidebarCollapsed ? 4 : AppSpacing.lg,
-                      AppSpacing.lg,
-                    ),
-                    child: _sidebarCollapsed
-                        ? const Center(child: ThemeSwitcherButton(compact: true))
-                        : const ThemeSwitcherButton(),
-                  ),
-                ],
-              ),
+                ),
+                Expanded(child: _pages[_index]),
+              ],
             ),
           ),
-          // Right pane: page owns list + footer; FAB floats above footer.
-          Expanded(child: _pages[_index]),
+          if (shellPagination != null)
+            ListPaginationBar(
+              page: shellPagination.page,
+              totalItems: shellPagination.totalItems,
+              onPageChanged: shellPagination.onPageChanged,
+            ),
         ],
       ),
     );
