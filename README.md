@@ -4,7 +4,9 @@ Aplicação **Flutter** para cadastrar empresas, usuários responsáveis, obriga
 
 ## Finalidade deste README
 
-Documentar **somente o frontend**: tecnologias, como apontar para a API, como executar (Chrome, web-server, Windows), estrutura `lib/`, funcionalidades de UI, decisões de arquitetura e UX (shell unificado, dialogs, searchable select, splash, FAB mobile, paginação) e melhorias futuras. Para a API e o banco, use o [README do backend](../gerenciamento-obrigacoes-backend/README.md). Para visão conjunta, use o [README raiz](../README.md).
+Documentar **somente o frontend**: tecnologias, como apontar para a API, como executar (Chrome, web-server, Windows), estrutura `lib/`, funcionalidades de UI, decisões de arquitetura e UX (shell unificado, dialogs, searchable select, splash, FAB mobile, paginação) e melhorias futuras.
+
+**Links relativos** (`../README.md`, backend) funcionam quando este repo está clonado **dentro** do monorepo `player-contabilidade`. Se você clonou só o frontend, use: [raiz](https://github.com/marcosvrca/player-contabilidade) · [backend](https://github.com/marcosvrca/gerenciamento-obrigacoes-backend).
 
 ## Quadro Trello
 
@@ -14,7 +16,7 @@ https://trello.com/b/WFkCNXHG/gerenciamento-de-obrigacoes
 
 | Área | Tecnologia |
 |------|------------|
-| SDK | Flutter (stable), Dart 3 |
+| SDK | Flutter **3.50+** (stable), Dart **3.11+** |
 | Estado / DI | flutter_riverpod |
 | HTTP | dio |
 | UI | `material_ui` (Material), design system próprio (tokens, tipografia) |
@@ -24,8 +26,12 @@ https://trello.com/b/WFkCNXHG/gerenciamento-de-obrigacoes
 
 ## Pré-requisitos
 
-- Flutter SDK instalado e no `PATH`  
-- Backend em execução (padrão `http://localhost:8080`) — ver README do backend / Docker Compose  
+- **Flutter SDK 3.50+** (Dart **3.11+**) instalado e no `PATH` — `flutter --version`  
+  - Dependências atuais (ex.: `shared_preferences ^2.5.6`) não resolvem em SDKs mais antigos (ex.: Flutter 3.24 / Dart 3.5).  
+  - Se estiver desatualizado: `flutter upgrade` (canal `stable`).  
+- **Chrome** (ou Edge) para rodar na web; ou toolchain Windows se for `flutter run -d windows`  
+- **Backend** em execução (padrão `http://localhost:8080`) — ver README do backend / Docker Compose  
+- **Windows:** ative o [Developer Mode](ms-settings:developers) (Configurações → Sistema → Para desenvolvedores). Sem suporte a symlinks, o Flutter pode falhar ao resolver plugins após `flutter pub get`.
 
 ## Configuração do ambiente
 
@@ -43,6 +49,8 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8080
 
 ## Instruções de execução
 
+Na raiz deste repositório:
+
 ```bash
 flutter pub get
 flutter run -d chrome
@@ -52,7 +60,7 @@ flutter run -d windows
 flutter run -d web-server --web-hostname 127.0.0.1 --web-port 5000
 ```
 
-Atalho na raiz do monorepo (Windows): `start-frontend.cmd` (abre Chrome).
+Atalho na raiz do monorepo (Windows): `start-frontend.cmd` — exige `flutter` no `PATH` (não usa caminho fixo de máquina).
 
 Após mudanças grandes em `web/` ou widgets críticos, use `flutter clean` + novo `flutter run` e **hard refresh** no navegador para evitar cache do bundle antigo.
 
