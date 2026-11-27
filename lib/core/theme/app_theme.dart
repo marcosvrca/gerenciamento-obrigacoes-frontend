@@ -1,8 +1,11 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_palette.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_spacing.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_visual_theme.dart';
+
+/// Loaded via CSS in web/index.html to avoid a blocking google_fonts fetch
+/// on the first Flutter frame.
+const String _brandFontFamily = 'Plus Jakarta Sans';
 
 class AppTheme {
   static ThemeData of(AppVisualTheme visualTheme) {
@@ -130,14 +133,15 @@ class AppTheme {
     required ColorScheme scheme,
     bool highContrast = false,
   }) {
-    final baseText = GoogleFonts.plusJakartaSansTextTheme(
-      ThemeData(brightness: brightness).textTheme,
-    );
+    final baseText = ThemeData(brightness: brightness).textTheme.apply(
+          fontFamily: _brandFontFamily,
+          bodyColor: scheme.onSurface,
+          displayColor: palette.ink,
+        );
 
     final textTheme = baseText
         .apply(
-          bodyColor: scheme.onSurface,
-          displayColor: palette.ink,
+          fontFamily: _brandFontFamily,
         )
         .copyWith(
           headlineLarge: baseText.headlineLarge?.copyWith(
@@ -196,6 +200,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
+      fontFamily: _brandFontFamily,
       colorScheme: scheme,
       scaffoldBackgroundColor: palette.canvas,
       extensions: [palette],
