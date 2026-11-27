@@ -4,7 +4,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:gerenciamento_obrigacoes_app/core/navigation/app_page_route.dart';
 import 'package:gerenciamento_obrigacoes_app/core/network/api_client.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_palette.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_spacing.dart';
@@ -58,8 +57,9 @@ class ObrigacaoDetailPage extends ConsumerWidget {
                 );
                 return;
               }
-              final salvou = await Navigator.of(context).push<bool>(
-                AppPageRoute(page: ObrigacaoFormPage(obrigacao: atual)),
+              final salvou = await showDialog<bool>(
+                context: context,
+                builder: (_) => ObrigacaoFormDialog(obrigacao: atual),
               );
               if (salvou == true) {
                 ref.invalidate(obrigacaoDetailProvider(id));

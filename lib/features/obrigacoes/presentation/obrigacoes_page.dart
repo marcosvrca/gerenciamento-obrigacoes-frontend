@@ -2,10 +2,12 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gerenciamento_obrigacoes_app/core/navigation/app_page_route.dart';
 import 'package:gerenciamento_obrigacoes_app/core/network/api_client.dart';
+import 'package:gerenciamento_obrigacoes_app/core/shell/shell_pagination.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/empty_state.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/entity_card.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/list_pagination.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/list_skeleton.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/page_create_fab.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/page_header.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/status_badge.dart';
 import 'package:gerenciamento_obrigacoes_app/features/obrigacoes/data/obrigacao_repository.dart';
@@ -13,13 +15,17 @@ import 'package:gerenciamento_obrigacoes_app/features/obrigacoes/models/obrigaca
 import 'package:gerenciamento_obrigacoes_app/features/obrigacoes/presentation/obrigacao_detail_page.dart';
 import 'package:gerenciamento_obrigacoes_app/features/obrigacoes/presentation/obrigacao_form_page.dart';
 
+
 final obrigacoesProvider =
     FutureProvider.autoDispose.family<List<Obrigacao>, String?>((ref, status) {
   return ref.watch(obrigacaoRepositoryProvider).listar(status: status);
 });
 
 class ObrigacoesPage extends ConsumerStatefulWidget {
-  const ObrigacoesPage({super.key});
+  const ObrigacoesPage({super.key, this.shellTabIndex = 0});
+
+  /// Slot in the unified shell pagination map (desktop IndexedStack).
+  final int shellTabIndex;
 
   @override
   ConsumerState<ObrigacoesPage> createState() => _ObrigacoesPageState();
@@ -39,19 +45,24 @@ class _ObrigacoesPageState extends ConsumerState<ObrigacoesPage> {
   @override
   Widget build(BuildContext context) {
     final obrigacoesAsync = ref.watch(obrigacoesProvider(_status));
+    final items = obrigacoesAsync.valueOrNull ?? const <Obrigacao>[];
+    final showPagination = ListPagination.shouldShow(items.length);
+    final wide = MediaQuery.sizeOf(context).width >= 900;
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: PageCreateFab(
+        label: 'Nova obrigação',
+        liftAbovePagination: showPagination,
         onPressed: () async {
-          final salvou = await Navigator.of(context).push<bool>(
-            AppPageRoute(page: const ObrigacaoFormPage()),
+          final salvou = await showDialog<bool>(
+            context: context,
+            builder: (_) => const ObrigacaoFormDialog(),
           );
           if (salvou == true) {
             ref.invalidate(obrigacoesProvider(_status));
           }
         },
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Nova obrigação'),
       ),
       body: ContentWidth(
         child: Column(
@@ -86,7 +97,7 @@ class _ObrigacoesPageState extends ConsumerState<ObrigacoesPage> {
                   return PaginatedEntityList<Obrigacao>(
                     items: obrigacoes,
                     page: _page,
-                    onPageChanged: (page) => setState(() => _page = page),
+                    bottomClearanceForFab: !showPagination,
                     onRefresh: () async =>
                         ref.invalidate(obrigacoesProvider(_status)),
                     itemBuilder: (context, item) {
@@ -119,6 +130,20 @@ class _ObrigacoesPageState extends ConsumerState<ObrigacoesPage> {
                       ref.invalidate(obrigacoesProvider(_status)),
                 ),
               ),
+            ),
+            // Desktop: full-bleed bar via HomeShell. Mobile: keep bar in column.
+            if (showPagination && !wide)
+              ListPaginationBar(
+                page: _page,
+                totalItems: items.length,
+                onPageChanged: (page) => setState(() => _page = page),
+              ),
+            ShellPaginationBinder(
+              tabIndex: widget.shellTabIndex,
+              enabled: wide && showPagination,
+              page: _page,
+              totalItems: items.length,
+              onPageChanged: (page) => setState(() => _page = page),
             ),
           ],
         ),

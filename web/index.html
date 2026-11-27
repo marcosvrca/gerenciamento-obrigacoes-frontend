@@ -33,6 +33,14 @@
   <title>Gerenciamento de Obrigações</title>
   <link rel="manifest" href="manifest.json">
 
+  <!-- Preload brand font so ThemeData does not wait on runtime google_fonts fetch. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
   <style>
     html, body {
       height: 100%;
@@ -41,10 +49,17 @@
       background: #F3F6F7;
     }
 
+    /* Hide Flutter's default thin progress bar while our splash is visible. */
+    .flutter-loader,
+    flt-glass-pane + .loading,
+    .loading[flt-renderer] {
+      display: none !important;
+    }
+
     #app-loading {
       position: fixed;
       inset: 0;
-      z-index: 9999;
+      z-index: 99999;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -52,7 +67,7 @@
         radial-gradient(ellipse at 20% 10%, rgba(15, 76, 92, 0.08), transparent 50%),
         radial-gradient(ellipse at 80% 90%, rgba(201, 120, 43, 0.08), transparent 45%),
         #F3F6F7;
-      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-family: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
       color: #142126;
       transition: opacity 280ms ease, visibility 280ms ease;
     }
@@ -97,6 +112,7 @@
       margin: 0;
       font-size: 0.92rem;
       color: #5B6B73;
+      min-height: 1.2em;
     }
 
     #app-loading .spinner {
@@ -130,31 +146,16 @@
   </style>
 </head>
 <body>
-  <div id="app-loading" role="status" aria-live="polite" aria-label="Carregando aplicativo">
+  <div id="app-loading" role="status" aria-live="polite" aria-label="Carregando aplicação">
     <div class="panel">
       <div class="mark" aria-hidden="true">GO</div>
       <p class="title">Gerenciamento de Obrigações</p>
-      <p class="subtitle">Preparando a interface…</p>
+      <p class="subtitle">Carregando aplicação…</p>
       <div class="spinner" aria-hidden="true"></div>
     </div>
   </div>
 
-  <script>
-    (function () {
-      function hideLoading() {
-        var el = document.getElementById('app-loading');
-        if (!el || el.classList.contains('is-hidden')) return;
-        el.classList.add('is-hidden');
-        window.setTimeout(function () {
-          if (el && el.parentNode) el.parentNode.removeChild(el);
-        }, 320);
-      }
-
-      window.addEventListener('flutter-first-frame', hideLoading, { once: true });
-      // Fallback if the first-frame event is missed on slow devices.
-      window.setTimeout(hideLoading, 20000);
-    })();
-  </script>
+  <!-- Custom bootstrap (web/flutter_bootstrap.js) keeps splash until first Flutter frame. -->
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

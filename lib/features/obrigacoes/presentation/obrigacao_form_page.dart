@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gerenciamento_obrigacoes_app/core/network/api_client.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_palette.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_spacing.dart';
-import 'package:gerenciamento_obrigacoes_app/core/widgets/list_skeleton.dart';
-import 'package:gerenciamento_obrigacoes_app/core/widgets/page_header.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/searchable_select_field.dart';
 import 'package:gerenciamento_obrigacoes_app/features/empresas/data/empresa_repository.dart';
 import 'package:gerenciamento_obrigacoes_app/features/empresas/models/empresa.dart';
 import 'package:gerenciamento_obrigacoes_app/features/obrigacoes/data/obrigacao_repository.dart';
@@ -13,16 +12,18 @@ import 'package:gerenciamento_obrigacoes_app/features/usuarios/data/usuario_repo
 import 'package:gerenciamento_obrigacoes_app/features/usuarios/models/usuario.dart';
 import 'package:intl/intl.dart';
 
-class ObrigacaoFormPage extends ConsumerStatefulWidget {
-  const ObrigacaoFormPage({super.key, this.obrigacao});
+/// Dialog de criação/edição — mesmo padrão de empresa e usuário.
+class ObrigacaoFormDialog extends ConsumerStatefulWidget {
+  const ObrigacaoFormDialog({super.key, this.obrigacao});
 
   final Obrigacao? obrigacao;
 
   @override
-  ConsumerState<ObrigacaoFormPage> createState() => _ObrigacaoFormPageState();
+  ConsumerState<ObrigacaoFormDialog> createState() =>
+      _ObrigacaoFormDialogState();
 }
 
-class _ObrigacaoFormPageState extends ConsumerState<ObrigacaoFormPage> {
+class _ObrigacaoFormDialogState extends ConsumerState<ObrigacaoFormDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titulo;
   late final TextEditingController _descricao;
@@ -69,18 +70,18 @@ class _ObrigacaoFormPageState extends ConsumerState<ObrigacaoFormPage> {
         }
       }
 
+      if (!mounted) return;
       setState(() {
         _empresas = empresas;
         _usuarios = usuarios;
         _carregando = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _carregando = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(extractErrorMessage(e))),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(extractErrorMessage(e))),
+      );
     }
   }
 
@@ -94,126 +95,126 @@ class _ObrigacaoFormPageState extends ConsumerState<ObrigacaoFormPage> {
   @override
   Widget build(BuildContext context) {
     final isNova = widget.obrigacao == null;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(isNova ? 'Nova obrigação' : 'Editar obrigação'),
-      ),
-      body: _carregando
-          ? const FormSkeleton()
-          : ContentWidth(
-              child: Form(
+    final palette = AppPalette.of(context);
+
+    return AlertDialog(
+      title: Text(isNova ? 'Nova obrigação' : 'Editar obrigação'),
+      content: SizedBox(
+        width: 420,
+        child: _carregando
+            ? const SizedBox(
+                height: 120,
+                child: Center(child: CircularProgressIndicator()),
+              )
+            : Form(
                 key: _formKey,
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.page,
-                    AppSpacing.sm,
-                    AppSpacing.page,
-                    AppSpacing.xxl,
-                  ),
-                  children: [
-                    Text(
-                      isNova
-                          ? 'Preencha os dados da obrigação.'
-                          : 'Atualize os dados mantendo empresa e responsável.',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                    TextFormField(
-                      controller: _titulo,
-                      decoration: const InputDecoration(labelText: 'Título'),
-                      validator: (v) =>
-                          v == null || v.trim().isEmpty ? 'Obrigatório' : null,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    TextFormField(
-                      controller: _descricao,
-                      decoration: const InputDecoration(labelText: 'Descrição'),
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Builder(
-                      builder: (context) {
-                        final palette = AppPalette.of(context);
-                        return Material(
-                      color: palette.surface,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadii.sm),
-                        side: BorderSide(
-                          color: palette.border,
-                          width: palette.borderWidth,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        controller: _titulo,
+                        decoration:
+                            const InputDecoration(labelText: 'Título'),
+                        validator: (v) => v == null || v.trim().isEmpty
+                            ? 'Obrigatório'
+                            : null,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: _descricao,
+                        decoration:
+                            const InputDecoration(labelText: 'Descrição'),
+                        maxLines: 3,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Material(
+                        color: palette.surface,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadii.sm),
+                          side: BorderSide(
+                            color: palette.border,
+                            width: palette.borderWidth,
+                          ),
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                          ),
+                          title: const Text('Prazo'),
+                          subtitle:
+                              Text(DateFormat('dd/MM/yyyy').format(_prazo)),
+                          trailing:
+                              const Icon(Icons.calendar_today_outlined),
+                          onTap: () async {
+                            final selected = await showDatePicker(
+                              context: context,
+                              initialDate: _prazo,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2100),
+                            );
+                            if (selected != null) {
+                              setState(() => _prazo = selected);
+                            }
+                          },
                         ),
                       ),
-                      child: ListTile(
-                        title: const Text('Prazo'),
-                        subtitle: Text(DateFormat('dd/MM/yyyy').format(_prazo)),
-                        trailing: const Icon(Icons.calendar_today_outlined),
-                        onTap: () async {
-                          final selected = await showDatePicker(
-                            context: context,
-                            initialDate: _prazo,
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime(2100),
-                          );
-                          if (selected != null) {
-                            setState(() => _prazo = selected);
-                          }
-                        },
-                      ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    DropdownButtonFormField<int>(
-                      initialValue: _empresaId,
-                      decoration: const InputDecoration(labelText: 'Empresa'),
-                      items: _empresas
-                          .map(
-                            (e) => DropdownMenuItem(
+                      const SizedBox(height: AppSpacing.md),
+                      SearchableSelectField<int>(
+                        label: 'Empresa',
+                        value: _empresaId,
+                        options: [
+                          for (final e in _empresas)
+                            SearchableSelectOption(
                               value: e.id,
-                              child: Text(
-                                '${e.razaoSocial}${e.ativa ? '' : ' (inativa)'}',
-                              ),
+                              label:
+                                  '${e.razaoSocial}${e.ativa ? '' : ' (inativa)'}',
                             ),
-                          )
-                          .toList(),
-                      onChanged: (value) => setState(() => _empresaId = value),
-                      validator: (v) =>
-                          v == null ? 'Selecione uma empresa' : null,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    DropdownButtonFormField<int>(
-                      initialValue: _usuarioId,
-                      decoration:
-                          const InputDecoration(labelText: 'Responsável'),
-                      items: _usuarios
-                          .map(
-                            (u) => DropdownMenuItem(
+                        ],
+                        onChanged: (value) =>
+                            setState(() => _empresaId = value),
+                        validator: (v) =>
+                            v == null ? 'Selecione uma empresa' : null,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      SearchableSelectField<int>(
+                        label: 'Responsável',
+                        value: _usuarioId,
+                        options: [
+                          for (final u in _usuarios)
+                            SearchableSelectOption(
                               value: u.id,
-                              child: Text(
-                                '${u.nome}${u.ativo ? '' : ' (inativo)'}',
-                              ),
+                              label: '${u.nome}${u.ativo ? '' : ' (inativo)'}',
                             ),
-                          )
-                          .toList(),
-                      onChanged: (value) => setState(() => _usuarioId = value),
-                      validator: (v) =>
-                          v == null ? 'Selecione um responsável' : null,
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                    FilledButton(
-                      onPressed: _salvando ? null : _salvar,
-                      child: _salvando
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Salvar'),
-                    ),
-                  ],
+                        ],
+                        onChanged: (value) =>
+                            setState(() => _usuarioId = value),
+                        validator: (v) =>
+                            v == null ? 'Selecione um responsável' : null,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _salvando || _carregando
+              ? null
+              : () => Navigator.pop(context, false),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _salvando || _carregando ? null : _salvar,
+          child: _salvando
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Salvar'),
+        ),
+      ],
     );
   }
 

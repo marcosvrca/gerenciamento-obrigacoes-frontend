@@ -1,12 +1,15 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gerenciamento_obrigacoes_app/core/network/api_client.dart';
+import 'package:gerenciamento_obrigacoes_app/core/shell/shell_pagination.dart';
 import 'package:gerenciamento_obrigacoes_app/core/theme/app_spacing.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/empty_state.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/entity_card.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/list_pagination.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/list_skeleton.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/page_create_fab.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/page_header.dart';
+import 'package:gerenciamento_obrigacoes_app/core/widgets/searchable_select_field.dart';
 import 'package:gerenciamento_obrigacoes_app/core/widgets/status_badge.dart';
 import 'package:gerenciamento_obrigacoes_app/features/empresas/data/empresa_repository.dart';
 import 'package:gerenciamento_obrigacoes_app/features/empresas/models/empresa.dart';
@@ -17,7 +20,10 @@ final empresasProvider =
 });
 
 class EmpresasPage extends ConsumerStatefulWidget {
-  const EmpresasPage({super.key});
+  const EmpresasPage({super.key, this.shellTabIndex = 1});
+
+  /// Slot in the unified shell pagination map (desktop IndexedStack).
+  final int shellTabIndex;
 
   @override
   ConsumerState<EmpresasPage> createState() => _EmpresasPageState();
@@ -37,12 +43,16 @@ class _EmpresasPageState extends ConsumerState<EmpresasPage> {
   @override
   Widget build(BuildContext context) {
     final empresasAsync = ref.watch(empresasProvider(_filtro));
+    final items = empresasAsync.valueOrNull ?? const <Empresa>[];
+    final showPagination = ListPagination.shouldShow(items.length);
+    final wide = MediaQuery.sizeOf(context).width >= 900;
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: PageCreateFab(
+        label: 'Nova empresa',
+        liftAbovePagination: showPagination,
         onPressed: () => _abrirFormulario(),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Nova empresa'),
       ),
       body: ContentWidth(
         child: Column(
@@ -75,7 +85,7 @@ class _EmpresasPageState extends ConsumerState<EmpresasPage> {
                   return PaginatedEntityList<Empresa>(
                     items: empresas,
                     page: _page,
-                    onPageChanged: (page) => setState(() => _page = page),
+                    bottomClearanceForFab: !showPagination,
                     onRefresh: () async =>
                         ref.invalidate(empresasProvider(_filtro)),
                     itemBuilder: (context, empresa) {
@@ -98,6 +108,19 @@ class _EmpresasPageState extends ConsumerState<EmpresasPage> {
                   onRetry: () => ref.invalidate(empresasProvider(_filtro)),
                 ),
               ),
+            ),
+            if (showPagination && !wide)
+              ListPaginationBar(
+                page: _page,
+                totalItems: items.length,
+                onPageChanged: (page) => setState(() => _page = page),
+              ),
+            ShellPaginationBinder(
+              tabIndex: widget.shellTabIndex,
+              enabled: wide && showPagination,
+              page: _page,
+              totalItems: items.length,
+              onPageChanged: (page) => setState(() => _page = page),
             ),
           ],
         ),
@@ -173,12 +196,10 @@ class _EmpresaFormDialogState extends ConsumerState<_EmpresaFormDialog> {
                 decoration:
                     const InputDecoration(labelText: 'CNPJ (14 dígitos)'),
                 keyboardType: TextInputType.number,
-                validator: (v) {
-                  if (v == null || !RegExp(r'^\d{14}$').hasMatch(v)) {
-                    return 'Informe 14 dígitos';
-                  }
-                  return null;
-                },
+                validator: (v) =>
+                    v == null || !RegExp(r'^\d{14}$').hasMatch(v)
+                        ? 'Informe 14 dígitos'
+                        : null,
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(
@@ -188,14 +209,18 @@ class _EmpresaFormDialogState extends ConsumerState<_EmpresaFormDialog> {
                     v == null || !v.contains('@') ? 'E-mail inválido' : null,
               ),
               const SizedBox(height: AppSpacing.md),
-              DropdownButtonFormField<String>(
-                initialValue: _situacao,
-                decoration: const InputDecoration(labelText: 'Situação'),
-                items: const [
-                  DropdownMenuItem(value: 'ATIVO', child: Text('Ativo')),
-                  DropdownMenuItem(value: 'INATIVO', child: Text('Inativo')),
+              SearchableSelectField<String>(
+                label: 'Situação',
+                value: _situacao,
+                options: const [
+                  SearchableSelectOption(value: 'ATIVO', label: 'Ativo'),
+                  SearchableSelectOption(value: 'INATIVO', label: 'Inativo'),
                 ],
-                onChanged: (value) => setState(() => _situacao = value!),
+                onChanged: (value) {
+                  if (value != null) setState(() => _situacao = value);
+                },
+                validator: (v) =>
+                    v == null ? 'Selecione a situação' : null,
               ),
             ],
           ),

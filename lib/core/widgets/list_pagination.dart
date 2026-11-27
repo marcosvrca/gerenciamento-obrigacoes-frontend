@@ -14,6 +14,11 @@ class ListPagination {
     return (totalItems / pageSize).ceil();
   }
 
+  /// Default: only when there is more than one page.
+  /// Use [always] to keep controls visible even with a single page (e.g. users).
+  static bool shouldShow(int totalItems, {bool always = false}) =>
+      always ? totalItems > 0 : totalItems > pageSize;
+
   static List<T> slice<T>(List<T> items, int page) {
     if (items.isEmpty) return const [];
     final safePage = page.clamp(0, pageCount(items.length) - 1);
@@ -23,21 +28,32 @@ class ListPagination {
   }
 }
 
+/// Thin pagination controls (intrinsic height only — never expands).
+/// Desktop: embedded in unified [HomeShell] chrome (no top seam).
+/// Mobile: in the page column (optional top divider).
 class ListPaginationBar extends StatelessWidget {
   const ListPaginationBar({
     super.key,
     required this.page,
     required this.totalItems,
     required this.onPageChanged,
+    this.alwaysShow = false,
+    this.embeddedInShell = false,
   });
 
   final int page;
   final int totalItems;
   final ValueChanged<int> onPageChanged;
 
+  /// When true, show the bar whenever [totalItems] > 0 (even a single page).
+  final bool alwaysShow;
+
+  /// Part of shell chrome: same surface, no top border (avoids a split look).
+  final bool embeddedInShell;
+
   @override
   Widget build(BuildContext context) {
-    if (totalItems <= ListPagination.pageSize) {
+    if (totalItems <= 0) {
       return const SizedBox.shrink();
     }
 
@@ -48,94 +64,121 @@ class ListPaginationBar extends StatelessWidget {
     final palette = AppPalette.of(context);
     final textTheme = Theme.of(context).textTheme;
 
-    return Container(
+    final content = Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.page,
-        AppSpacing.sm,
+        AppSpacing.xs,
         AppSpacing.page,
-        AppSpacing.md,
+        AppSpacing.xs,
       ),
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(color: palette.border, width: palette.borderWidth),
-        ),
-      ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: Text(
-              '$start–$end de $totalItems',
-              style: textTheme.bodySmall?.copyWith(color: palette.muted),
-            ),
-          ),
-          IconButton(
-            tooltip: 'Página anterior',
-            onPressed: safePage > 0 ? () => onPageChanged(safePage - 1) : null,
-            icon: const Icon(Icons.chevron_left_rounded),
-          ),
           Text(
-            '${safePage + 1} / $pages',
-            style: textTheme.labelLarge?.copyWith(color: palette.ink),
+            '$start–$end de $totalItems',
+            textAlign: TextAlign.center,
+            style: textTheme.bodySmall?.copyWith(color: palette.muted),
           ),
-          IconButton(
-            tooltip: 'Próxima página',
-            onPressed:
-                safePage < pages - 1 ? () => onPageChanged(safePage + 1) : null,
-            icon: const Icon(Icons.chevron_right_rounded),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              IconButton(
+                tooltip: 'Página anterior',
+                visualDensity: VisualDensity.compact,
+                onPressed: safePage > 0
+                    ? () => onPageChanged(safePage - 1)
+                    : null,
+                icon: const Icon(Icons.chevron_left_rounded),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                ),
+                child: Text(
+                  '${safePage + 1} / $pages',
+                  style: textTheme.labelLarge?.copyWith(color: palette.ink),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Próxima página',
+                visualDensity: VisualDensity.compact,
+                onPressed: safePage < pages - 1
+                    ? () => onPageChanged(safePage + 1)
+                    : null,
+                icon: const Icon(Icons.chevron_right_rounded),
+              ),
+            ],
           ),
         ],
+      ),
+    );
+
+    if (embeddedInShell) {
+      return SafeArea(
+        top: false,
+        minimum: EdgeInsets.zero,
+        child: content,
+      );
+    }
+
+    return Material(
+      color: palette.surface,
+      elevation: 0,
+      child: SafeArea(
+        top: false,
+        minimum: EdgeInsets.zero,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: palette.border, width: palette.borderWidth),
+            ),
+          ),
+          child: content,
+        ),
       ),
     );
   }
 }
 
+/// Scrollable page slice only — pair with shell or in-page [ListPaginationBar].
 class PaginatedEntityList<T> extends StatelessWidget {
   const PaginatedEntityList({
     super.key,
     required this.items,
     required this.page,
-    required this.onPageChanged,
     required this.itemBuilder,
     required this.onRefresh,
+    this.bottomClearanceForFab = false,
   });
 
   final List<T> items;
   final int page;
-  final ValueChanged<int> onPageChanged;
   final Widget Function(BuildContext context, T item) itemBuilder;
   final Future<void> Function() onRefresh;
+
+  /// Extra list padding when there is no footer and the FAB floats over content.
+  final bool bottomClearanceForFab;
 
   @override
   Widget build(BuildContext context) {
     final pageItems = ListPagination.slice(items, page);
+    final bottom = bottomClearanceForFab ? 88.0 : AppSpacing.lg;
 
-    return Column(
-      children: [
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: onRefresh,
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.page,
-                AppSpacing.sm,
-                AppSpacing.page,
-                AppSpacing.lg,
-              ),
-              itemCount: pageItems.length,
-              separatorBuilder: (_, __) =>
-                  const SizedBox(height: AppSpacing.md),
-              itemBuilder: (context, index) =>
-                  itemBuilder(context, pageItems[index]),
-            ),
-          ),
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView.separated(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.page,
+          AppSpacing.sm,
+          AppSpacing.page,
+          bottom,
         ),
-        ListPaginationBar(
-          page: page,
-          totalItems: items.length,
-          onPageChanged: onPageChanged,
-        ),
-        const SizedBox(height: 72),
-      ],
+        itemCount: pageItems.length,
+        separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+        itemBuilder: (context, index) =>
+            itemBuilder(context, pageItems[index]),
+      ),
     );
   }
 }

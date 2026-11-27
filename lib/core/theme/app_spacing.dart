@@ -8,9 +8,9 @@ class AppSpacing {
   static const double xl = 24;
   static const double xxl = 32;
 
-  static const double page = 20;
-  static const double pageWide = 28;
-  static const double maxContentWidth = 960;
+  static const double page = 24;
+  static const double pageWide = 32;
+  static const double maxContentWidth = 880;
 }
 
 class AppRadii {
