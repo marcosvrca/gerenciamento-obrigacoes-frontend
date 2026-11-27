@@ -49,7 +49,10 @@ class ListPaginationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!ListPagination.shouldShow(totalItems, always: alwaysShow)) {
+    // Parents decide when to mount this bar. Do not re-apply shouldShow here:
+    // HomeShell mounts from binder config (including users with alwaysShow and
+    // fewer than pageSize items); a second gate would hide that footer again.
+    if (totalItems <= 0) {
       return const SizedBox.shrink();
     }
 
